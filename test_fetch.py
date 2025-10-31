@@ -9,7 +9,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from fx_kline.core import OHLCRequest, fetch_batch_ohlc_sync, get_preset_pairs
+from fx_kline.core import OHLCRequest, fetch_batch_ohlc_sync, get_preset_pairs  # type: ignore
 from datetime import datetime
 
 def test_simple_fetch():
