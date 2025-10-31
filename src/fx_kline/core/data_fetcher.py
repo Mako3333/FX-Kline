@@ -18,7 +18,10 @@ from .validators import validate_currency_pair, validate_period, validate_timefr
 from .timezone_utils import convert_dataframe_to_jst, get_jst_now
 
 # Thread pool for async yfinance calls
-_executor = ThreadPoolExecutor(max_workers=4)
+# NOTE: max_workers=1 to avoid yfinance parallel execution bug
+# yfinance is not thread-safe and returns incorrect data when called in parallel
+# See: https://github.com/ranaroussi/yfinance/issues (known issue)
+_executor = ThreadPoolExecutor(max_workers=1)
 
 _PERIOD_PATTERN = re.compile(r"^(\d+)([a-z]+)$")
 _INTERVAL_PATTERN = re.compile(r"^(\d+)([a-z]+)$")
