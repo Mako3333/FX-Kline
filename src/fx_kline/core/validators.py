@@ -81,12 +81,13 @@ def validate_currency_pair(pair: str) -> str:
             f"Supported pairs: {', '.join(SUPPORTED_CURRENCY_PAIRS.keys())}"
         )
 
-    # Special case for gold (XAUUSD) - use GC=F instead of XAUUSD=X
-    # GC=F is gold futures which provides spot-equivalent pricing
+    # Special case for gold (XAUUSD) - use GC=F (Gold Futures)
+    # GC=F is the only reliable gold price source in yfinance
+    # Note: GC=F has different trading hours than FX (commodity futures market)
     if pair_upper == "XAUUSD":
         return "GC=F"
 
-    # Add yfinance suffix for other currency pairs
+    # Add yfinance suffix for FX currency pairs
     if not pair_upper.endswith(YFINANCE_PAIR_SUFFIX):
         return f"{pair_upper}{YFINANCE_PAIR_SUFFIX}"
     return pair_upper

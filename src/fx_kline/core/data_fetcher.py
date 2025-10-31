@@ -56,7 +56,7 @@ def _download_with_fallback_window(pair: str, interval: str, business_days: int)
     )
 
 
-def _prepare_dataframe(df: pd.DataFrame, interval: str, exclude_weekends: bool) -> pd.DataFrame:
+def _prepare_dataframe(df: pd.DataFrame, interval: str, symbol: str, exclude_weekends: bool) -> pd.DataFrame:
     """Apply weekend filtering, flatten columns, and convert to JST."""
     if df.empty:
         return df
@@ -76,9 +76,9 @@ def _prepare_dataframe(df: pd.DataFrame, interval: str, exclude_weekends: bool) 
     if processed.empty:
         return processed
 
-    # Apply FX-aware weekend filtering (after timezone conversion to JST)
+    # Apply market-specific weekend filtering (after timezone conversion to JST)
     if exclude_weekends:
-        processed = filter_business_days_fx(processed, interval)
+        processed = filter_business_days_fx(processed, interval, symbol)
 
     return processed
 
@@ -161,7 +161,7 @@ def fetch_single_ohlc(
         df = _download_with_period(pair_formatted, interval_validated, period_validated)
         raw_data_present = not df.empty
 
-        df_jst = _prepare_dataframe(df, interval_validated, exclude_weekends)
+        df_jst = _prepare_dataframe(df, interval_validated, pair_formatted, exclude_weekends)
 
         # Attempt fallback if coverage is clearly insufficient
         if (
@@ -171,7 +171,7 @@ def fetch_single_ohlc(
         ):
             df_fallback = _download_with_fallback_window(pair_formatted, interval_validated, expected_business_days)
             raw_data_present = raw_data_present or not df_fallback.empty
-            df_fallback_jst = _prepare_dataframe(df_fallback, interval_validated, exclude_weekends)
+            df_fallback_jst = _prepare_dataframe(df_fallback, interval_validated, pair_formatted, exclude_weekends)
 
             if _count_unique_business_days(df_fallback_jst) >= _count_unique_business_days(df_jst):
                 df_jst = df_fallback_jst.copy()

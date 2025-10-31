@@ -86,22 +86,39 @@ def filter_business_days(df: pd.DataFrame) -> pd.DataFrame:
     return df[df.index.dayofweek < 5]
 
 
-def filter_business_days_fx(df: pd.DataFrame, interval: str) -> pd.DataFrame:
+def is_gold_futures(symbol: str) -> bool:
     """
-    Remove weekend data considering FX market trading hours
+    Check if symbol is Gold Futures (GC=F)
 
-    For daily/weekly/monthly intervals: Uses simple weekday filter
-    For intraday intervals (minutes/hours): Considers FX market hours with DST
+    Args:
+        symbol: yfinance symbol string
 
-    FX Market hours (JST):
-    - Close: Saturday 6:00 (DST) or 7:00 (Standard) - NY market closes at 17:00
-    - Open: Monday 6:00 (DST) or 7:00 (Standard) - Sydney market opens
+    Returns:
+        True if symbol is gold futures
+    """
+    return symbol == "GC=F"
 
-    This keeps Friday night session data that extends into Saturday morning (before close time)
+
+def filter_business_days_fx(df: pd.DataFrame, interval: str, symbol: str = "") -> pd.DataFrame:
+    """
+    Remove weekend data considering market-specific trading hours
+
+    For Gold Futures (GC=F):
+    - Trades Sun 18:00 ET - Fri 17:00 ET (commodity futures market)
+    - Uses simple weekday filter (no Saturday data exists)
+
+    For FX pairs:
+    - For daily/weekly/monthly intervals: Uses simple weekday filter
+    - For intraday intervals (minutes/hours): Considers FX market hours with DST
+    - FX Market hours (JST):
+      - Close: Saturday 6:00 (DST) or 7:00 (Standard) - NY market closes at 17:00
+      - Open: Monday 6:00 (DST) or 7:00 (Standard) - Sydney market opens
+    - This keeps Friday night session data that extends into Saturday morning
 
     Args:
         df: DataFrame with DatetimeIndex in JST
         interval: Timeframe string (e.g., '1h', '15m', '1d')
+        symbol: yfinance symbol (e.g., 'GC=F', 'USDJPY=X')
 
     Returns:
         DataFrame with weekend data filtered appropriately
@@ -113,11 +130,15 @@ def filter_business_days_fx(df: pd.DataFrame, interval: str) -> pd.DataFrame:
     if not isinstance(df.index, pd.DatetimeIndex):
         raise ValueError("DataFrame index must be DatetimeIndex")
 
-    # For daily/weekly/monthly data, use simple weekday filter
+    # For Gold Futures: Use simple weekday filter (commodity market hours, no Saturday data)
+    if is_gold_futures(symbol):
+        return df[df.index.dayofweek < 5]
+
+    # For FX pairs: For daily/weekly/monthly data, use simple weekday filter
     if interval.endswith('d') or interval.endswith('wk') or interval.endswith('mo'):
         return df[df.index.dayofweek < 5]
 
-    # For intraday data, consider FX market trading hours
+    # For FX intraday data, consider FX market trading hours
     def is_fx_trading_time(dt: datetime) -> bool:
         """Check if datetime is within FX market trading hours"""
         weekday = dt.dayofweek  # Monday=0, Sunday=6
