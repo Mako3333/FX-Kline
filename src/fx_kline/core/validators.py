@@ -34,7 +34,7 @@ SUPPORTED_TIMEFRAMES = {
 YFINANCE_PAIR_SUFFIX = "=X"
 
 # Preset timeframes for UI
-PRESET_TIMEFRAMES = ["5m", "15m", "1h", "1d"]
+PRESET_TIMEFRAMES = ["5m", "15m", "1h", "4h", "1d"]
 
 # Preset currency pairs for UI
 PRESET_CURRENCY_PAIRS = ["USDJPY", "EURUSD", "GBPUSD", "AUDUSD", "EURJPY", "GBPJPY", "AUDJPY", "XAUUSD"]
