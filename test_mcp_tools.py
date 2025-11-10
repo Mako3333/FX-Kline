@@ -8,7 +8,9 @@ Tests basic functionality of each MCP tool without starting the full server.
 import sys
 from pathlib import Path
 
-# Add src to path for imports
+# Note: This path manipulation is required when the package is not installed in editable mode.
+# Without this, `uv run python test_mcp_tools.py` would fail with ModuleNotFoundError.
+# Alternative: Install package in editable mode with `uv pip install -e .`
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
@@ -32,8 +34,8 @@ def test_list_available_pairs():
     print(f"Count: {result['count']}")
     print()
 
-    assert result['success'], "list_available_pairs_tool should succeed"
-    assert result['count'] > 0, "Should have at least one currency pair"
+    assert result['success'], f"list_available_pairs_tool should succeed. Error: {result.get('error')}"
+    assert result['count'] > 0, f"Should have at least one currency pair. Got: {result.get('count')}"
 
 
 def test_list_available_timeframes():
@@ -48,8 +50,8 @@ def test_list_available_timeframes():
     print(f"Count: {result['count']}")
     print()
 
-    assert result['success'], "list_available_timeframes_tool should succeed"
-    assert result['count'] > 0, "Should have at least one timeframe"
+    assert result['success'], f"list_available_timeframes_tool should succeed. Error: {result.get('error')}"
+    assert result['count'] > 0, f"Should have at least one timeframe. Got: {result.get('count')}"
 
 
 def test_fetch_ohlc():
@@ -82,8 +84,12 @@ def test_fetch_ohlc():
         print(f"Error Message: {result['error']['message']}")
 
     print()
-    assert result['success'], "fetch_ohlc_tool should succeed"
-    assert result['data']['data_count'] > 0, "Should have data"
+    assert result['success'], f"fetch_ohlc_tool should succeed. Error: {result.get('error')}"
+    if result['success']:
+        assert result['data']['data_count'] > 0, f"Should have data. Got: {result['data'].get('data_count')} rows"
+    else:
+        # If not successful, fail with error details
+        raise AssertionError(f"fetch_ohlc_tool failed: {result.get('error')}")
 
 
 def test_fetch_ohlc_batch():
@@ -124,8 +130,16 @@ def test_fetch_ohlc_batch():
         print(f"Error Message: {result['error']['message']}")
 
     print()
-    assert result['success'], "fetch_ohlc_batch_tool should succeed"
-    assert result['statistics']['total_succeeded'] > 0, "Should have at least one success"
+    assert result['success'], f"fetch_ohlc_batch_tool should succeed. Error: {result.get('error')}"
+    if result['success']:
+        assert result['statistics']['total_succeeded'] > 0, (
+            f"Should have at least one success. "
+            f"Succeeded: {result['statistics']['total_succeeded']}, "
+            f"Failed: {result['statistics']['total_failed']}"
+        )
+    else:
+        # If not successful, fail with error details
+        raise AssertionError(f"fetch_ohlc_batch_tool failed: {result.get('error')}")
 
 
 def main():

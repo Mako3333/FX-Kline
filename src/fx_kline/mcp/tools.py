@@ -5,7 +5,7 @@ Defines the MCP tools that interact with the core FX-Kline functionality.
 """
 
 from typing import Any, Dict, List
-import json
+from datetime import datetime
 
 from ..core import (
     OHLCRequest,
@@ -15,6 +15,29 @@ from ..core import (
     get_supported_timeframes,
     get_preset_timeframes,
 )
+
+# Maximum number of requests allowed in a single batch
+MAX_BATCH_SIZE = 50
+
+
+def _normalize_datetime(obj: Any) -> Any:
+    """
+    Recursively normalize datetime objects to ISO format strings for JSON serialization.
+
+    Args:
+        obj: Object to normalize
+
+    Returns:
+        Normalized object with datetime converted to ISO format strings
+    """
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {key: _normalize_datetime(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [_normalize_datetime(item) for item in obj]
+    else:
+        return obj
 
 
 def fetch_ohlc_tool(
@@ -41,7 +64,7 @@ def fetch_ohlc_tool(
 
         if response.total_succeeded > 0:
             ohlc_data = response.successful[0]
-            return {
+            result = {
                 "success": True,
                 "data": {
                     "pair": ohlc_data.pair,
@@ -53,9 +76,10 @@ def fetch_ohlc_tool(
                     "rows": ohlc_data.rows,
                 }
             }
+            return _normalize_datetime(result)
         else:
             error = response.failed[0]
-            return {
+            result = {
                 "success": False,
                 "error": {
                     "type": error.error_type,
@@ -65,8 +89,9 @@ def fetch_ohlc_tool(
                     "period": error.period,
                 }
             }
+            return _normalize_datetime(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": {
                 "type": "UnexpectedError",
@@ -76,6 +101,7 @@ def fetch_ohlc_tool(
                 "period": period,
             }
         }
+        return _normalize_datetime(result)
 
 
 def fetch_ohlc_batch_tool(
@@ -102,6 +128,19 @@ def fetch_ohlc_batch_tool(
         ]
     """
     try:
+        # Validate batch size to prevent excessive API requests
+        if len(requests) > MAX_BATCH_SIZE:
+            result = {
+                "success": False,
+                "error": {
+                    "type": "BatchSizeExceeded",
+                    "message": f"Batch size ({len(requests)}) exceeds maximum allowed ({MAX_BATCH_SIZE})",
+                    "max_batch_size": MAX_BATCH_SIZE,
+                    "requested_size": len(requests),
+                }
+            }
+            return _normalize_datetime(result)
+
         ohlc_requests = [
             OHLCRequest(
                 pair=req["pair"],
@@ -138,7 +177,7 @@ def fetch_ohlc_batch_tool(
             for error in response.failed
         ]
 
-        return {
+        result = {
             "success": True,
             "summary": response.summary,
             "successful": successful_data,
@@ -149,14 +188,16 @@ def fetch_ohlc_batch_tool(
                 "total_failed": response.total_failed,
             }
         }
+        return _normalize_datetime(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": {
                 "type": "UnexpectedError",
                 "message": str(e),
             }
         }
+        return _normalize_datetime(result)
 
 
 def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
@@ -175,19 +216,21 @@ def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
         else:
             pairs = get_supported_pairs()
 
-        return {
+        result = {
             "success": True,
             "pairs": pairs,
             "count": len(pairs),
         }
+        return _normalize_datetime(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": {
                 "type": "UnexpectedError",
                 "message": str(e),
             }
         }
+        return _normalize_datetime(result)
 
 
 def list_available_timeframes_tool(preset_only: bool = False) -> Dict[str, Any]:
@@ -206,16 +249,18 @@ def list_available_timeframes_tool(preset_only: bool = False) -> Dict[str, Any]:
         else:
             timeframes = get_supported_timeframes()
 
-        return {
+        result = {
             "success": True,
             "timeframes": timeframes,
             "count": len(timeframes),
         }
+        return _normalize_datetime(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": {
                 "type": "UnexpectedError",
                 "message": str(e),
             }
         }
+        return _normalize_datetime(result)
