@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fx-kline": {
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "/absolute/path/to/FX-Kline/run_mcp_server.py"
+      ],
+      "description": "FX OHLC data fetching tool with JST timezone conversion and business day filtering"
+    }
+  }
+}
