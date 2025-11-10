@@ -13,7 +13,9 @@ import asyncio
 import sys
 from pathlib import Path
 
-# Add src to path for imports
+# Note: This path manipulation is required when the package is not installed in editable mode.
+# Without this, `uv run python run_mcp_server.py` would fail with ModuleNotFoundError.
+# Alternative: Install package in editable mode with `uv pip install -e .`
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 

@@ -6,7 +6,8 @@ Provides Model Context Protocol server functionality for fetching FX OHLC data.
 
 import asyncio
 import json
-from typing import Any, Dict
+import logging
+from importlib.metadata import version, PackageNotFoundError
 
 from mcp.server.models import InitializationOptions
 from mcp.server import NotificationOptions, Server
@@ -20,6 +21,13 @@ from .tools import (
     list_available_timeframes_tool,
 )
 
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Create MCP server instance
 server = Server("fx-kline")
@@ -167,6 +175,10 @@ async def handle_call_tool(
 
     try:
         if name == "fetch_ohlc":
+            # Validate required parameters
+            if "pair" not in arguments:
+                raise ValueError("Missing required parameter: pair")
+
             result = fetch_ohlc_tool(
                 pair=arguments["pair"],
                 interval=arguments.get("interval", "1d"),
@@ -174,6 +186,10 @@ async def handle_call_tool(
                 exclude_weekends=arguments.get("exclude_weekends", True),
             )
         elif name == "fetch_ohlc_batch":
+            # Validate required parameters
+            if "requests" not in arguments:
+                raise ValueError("Missing required parameter: requests")
+
             result = fetch_ohlc_batch_tool(
                 requests=arguments["requests"],
                 exclude_weekends=arguments.get("exclude_weekends", True),
@@ -196,6 +212,11 @@ async def handle_call_tool(
             )
         ]
     except Exception as e:
+        # Log the error with full traceback
+        logger.exception(
+            f"Error executing tool '{name}' with arguments {arguments}: {str(e)}"
+        )
+
         error_result = {
             "success": False,
             "error": {
@@ -218,13 +239,21 @@ async def main():
 
     Runs the server using stdio transport.
     """
+    # Get version dynamically from package metadata
+    try:
+        server_version = version("fx-kline")
+    except PackageNotFoundError:
+        # Fallback to hardcoded version if package is not installed
+        server_version = "0.1.0"
+        logger.warning("Package 'fx-kline' not found in metadata, using fallback version")
+
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
             write_stream,
             InitializationOptions(
                 server_name="fx-kline",
-                server_version="0.1.0",
+                server_version=server_version,
                 capabilities=server.get_capabilities(
                     notification_options=NotificationOptions(),
                     experimental_capabilities={},

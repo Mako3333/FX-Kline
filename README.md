@@ -271,6 +271,11 @@ uv sync --extra mcp
 }
 ```
 
+> **⚠️ 重要**: `/path/to/FX-Kline/` の部分は、ご自身の環境における **絶対パス** に置き換えてください。
+>
+> 例: macOS/Linuxの場合 `/Users/username/projects/FX-Kline/run_mcp_server.py`
+> 例: Windowsの場合 `C:\Users\username\projects\FX-Kline\run_mcp_server.py`
+
 詳細なセットアップ手順とユースケースは **[MCP_SETUP.md](./MCP_SETUP.md)** を参照してください。
 
 ### 🛠️ 実装済みMCPツール
