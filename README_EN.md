@@ -88,7 +88,6 @@ English | [日本語](./README.md)
 uv run streamlit run src/fx_kline/ui/streamlit_app.py
 ```
 
-<!-- Add screenshot here -->
 > 💡 With Streamlit UI, you can select multiple currency pairs and timeframes using multi-select and fetch them in parallel.
 
 ### Python API
@@ -270,6 +269,11 @@ uv sync --extra mcp
   }
 }
 ```
+
+> **⚠️ Important**: Replace `/path/to/FX-Kline/` with the **absolute path** to your FX-Kline directory.
+>
+> Example (macOS/Linux): `/Users/username/projects/FX-Kline/run_mcp_server.py`
+> Example (Windows): `C:\Users\username\projects\FX-Kline\run_mcp_server.py`
 
 For detailed setup instructions and use cases, see **[MCP_SETUP.md](./MCP_SETUP.md)**
 
@@ -558,8 +562,6 @@ See [AGENTS.md](./AGENTS.md) for details.
 ### Contributors
 
 Thanks to all contributors to this project.
-
-<!-- Contributors list to be added -->
 
 ---
 
