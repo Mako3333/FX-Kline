@@ -13,6 +13,7 @@ from mcp.server.models import InitializationOptions
 from mcp.server import NotificationOptions, Server
 from mcp.server.stdio import stdio_server
 from mcp import types
+from mcp.types import ToolAnnotations
 
 from .tools import (
     fetch_ohlc_tool,
@@ -46,8 +47,16 @@ async def handle_list_tools() -> list[types.Tool]:
             name="fetch_ohlc",
             description=(
                 "Fetch OHLC (Open-High-Low-Close) data for a single FX currency pair. "
-                "Supports multiple timeframes (1m, 5m, 15m, 1h, 4h, 1d) and automatically "
-                "converts to JST timezone with business day filtering. "
+                "\n\n"
+                "Supports multiple timeframes (1m-1mo) and automatically converts to JST timezone "
+                "with business day filtering. "
+                "\n\n"
+                "When to use: Single pair analysis, chart visualization, technical indicator calculation. "
+                "For multiple pairs, use 'fetch_ohlc_batch' for better performance. "
+                "\n\n"
+                "Tip: If you're unsure about supported pairs or timeframes, call "
+                "'list_available_pairs' or 'list_available_timeframes' first. "
+                "\n\n"
                 "Available pairs: USDJPY, EURUSD, GBPUSD, AUDUSD, EURJPY, GBPJPY, AUDJPY, XAUUSD (Gold)."
             ),
             inputSchema={
@@ -75,13 +84,26 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "required": ["pair"],
             },
+            annotations=ToolAnnotations(
+                title="FX OHLC データ取得",
+                readOnlyHint=True,
+                idempotentHint=True,
+                openWorldHint=True,
+            ),
         ),
         types.Tool(
             name="fetch_ohlc_batch",
             description=(
                 "Fetch OHLC data for multiple currency pairs and timeframes in parallel. "
-                "More efficient than multiple single requests. Returns aggregated results "
-                "with success/failure statistics."
+                "\n\n"
+                "More efficient than multiple single 'fetch_ohlc' calls. Returns aggregated results "
+                "with detailed success/failure statistics. Maximum 50 requests per batch. "
+                "\n\n"
+                "When to use: Multi-pair correlation analysis, portfolio analysis, market overview, "
+                "comparing multiple timeframes for the same pair. "
+                "\n\n"
+                "Tip: Batch requests are processed in parallel for optimal performance. "
+                "Failed requests don't affect successful ones."
             ),
             inputSchema={
                 "type": "object",
@@ -118,12 +140,25 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "required": ["requests"],
             },
+            annotations=ToolAnnotations(
+                title="FX OHLC バッチ取得",
+                readOnlyHint=True,
+                idempotentHint=True,
+                openWorldHint=True,
+            ),
         ),
         types.Tool(
             name="list_available_pairs",
             description=(
                 "List all available currency pairs that can be fetched. "
-                "Includes major FX pairs and commodities like Gold (XAUUSD)."
+                "\n\n"
+                "Returns a complete list of supported pairs with their full names. "
+                "Includes major FX pairs (USD, EUR, GBP, AUD crosses) and commodities (Gold). "
+                "\n\n"
+                "When to use: Before calling fetch_ohlc/fetch_ohlc_batch to validate pair names, "
+                "for UI dropdowns, to discover available pairs, or when you encounter a ValidationError. "
+                "\n\n"
+                "Tip: Call this tool first when you're unsure which currency pairs are supported."
             ),
             inputSchema={
                 "type": "object",
@@ -135,12 +170,26 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                 },
             },
+            annotations=ToolAnnotations(
+                title="対応通貨ペア一覧",
+                readOnlyHint=True,
+                idempotentHint=True,
+                openWorldHint=False,
+            ),
         ),
         types.Tool(
             name="list_available_timeframes",
             description=(
                 "List all available timeframes/intervals for data fetching. "
-                "Ranges from 1-minute to monthly data."
+                "\n\n"
+                "Returns supported intervals ranging from 1-minute (1m) to monthly (1mo) data. "
+                "Includes: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1wk, 1mo. "
+                "\n\n"
+                "When to use: Before calling fetch_ohlc/fetch_ohlc_batch to validate interval values, "
+                "for UI dropdowns, to discover available timeframes, or when you encounter a ValidationError. "
+                "\n\n"
+                "Tip: Shorter timeframes (1m-4h) are for intraday analysis, longer ones (1d-1mo) "
+                "for swing/position trading."
             ),
             inputSchema={
                 "type": "object",
@@ -152,6 +201,12 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                 },
             },
+            annotations=ToolAnnotations(
+                title="対応時間足一覧",
+                readOnlyHint=True,
+                idempotentHint=True,
+                openWorldHint=False,
+            ),
         ),
     ]
 

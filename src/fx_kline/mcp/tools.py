@@ -20,6 +20,88 @@ from ..core import (
 MAX_BATCH_SIZE = 50
 
 
+def _categorize_error(error_type: str) -> str:
+    """
+    Categorize error type into high-level categories.
+
+    Args:
+        error_type: Specific error type
+
+    Returns:
+        Error category: ClientError, ServerError, or DataError
+    """
+    client_errors = {"ValidationError", "BatchSizeExceeded"}
+    data_errors = {"NoDataAvailable", "AllWeekendData", "NoOHLCColumns"}
+
+    if error_type in client_errors:
+        return "ClientError"
+    elif error_type in data_errors:
+        return "DataError"
+    else:
+        return "ServerError"
+
+
+def _generate_hint(error_type: str) -> str:
+    """
+    Generate recovery hint based on error type.
+
+    Args:
+        error_type: Specific error type
+
+    Returns:
+        Hint message for error recovery
+    """
+    hints = {
+        "ValidationError": "Call 'list_available_pairs' or 'list_available_timeframes' to see supported values",
+        "BatchSizeExceeded": f"Reduce the number of requests to {MAX_BATCH_SIZE} or fewer and try again",
+        "NoDataAvailable": "Try extending the time period or choosing a different interval",
+        "AllWeekendData": "Extend the time period to include weekdays, or set exclude_weekends=false",
+        "NoOHLCColumns": "This may be a temporary issue with the data source. Try again later",
+        "UnexpectedError": "Check the error message for details and try again",
+    }
+    return hints.get(error_type, "Review the error message and adjust your request")
+
+
+def _is_recoverable(error_type: str) -> bool:
+    """
+    Determine if an error is recoverable through user action.
+
+    Args:
+        error_type: Specific error type
+
+    Returns:
+        True if the error can be recovered from
+    """
+    recoverable_errors = {
+        "ValidationError",
+        "BatchSizeExceeded",
+        "NoDataAvailable",
+        "AllWeekendData",
+    }
+    return error_type in recoverable_errors
+
+
+def _suggest_tools(error_type: str) -> List[str]:
+    """
+    Suggest tools that might help recover from the error.
+
+    Args:
+        error_type: Specific error type
+
+    Returns:
+        List of suggested tool names
+    """
+    suggestions = {
+        "ValidationError": ["list_available_pairs", "list_available_timeframes"],
+        "NoDataAvailable": [],
+        "AllWeekendData": [],
+        "BatchSizeExceeded": [],
+        "NoOHLCColumns": [],
+        "UnexpectedError": [],
+    }
+    return suggestions.get(error_type, [])
+
+
 def _normalize_datetime(obj: Any) -> Any:
     """
     Recursively normalize datetime objects to ISO format strings for JSON serialization.
@@ -79,26 +161,40 @@ def fetch_ohlc_tool(
             return _normalize_datetime(result)
         else:
             error = response.failed[0]
+            error_type = error.error_type
             result = {
                 "success": False,
                 "error": {
-                    "type": error.error_type,
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
                     "message": error.error_message,
-                    "pair": error.pair,
-                    "interval": error.interval,
-                    "period": error.period,
+                    "hint": _generate_hint(error_type),
+                    "recoverable": _is_recoverable(error_type),
+                    "suggested_tools": _suggest_tools(error_type),
+                    "context": {
+                        "pair": error.pair,
+                        "interval": error.interval,
+                        "period": error.period,
+                    }
                 }
             }
             return _normalize_datetime(result)
     except Exception as e:
+        error_type = "UnexpectedError"
         result = {
             "success": False,
             "error": {
-                "type": "UnexpectedError",
+                "type": error_type,
+                "category": _categorize_error(error_type),
                 "message": str(e),
-                "pair": pair,
-                "interval": interval,
-                "period": period,
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {
+                    "pair": pair,
+                    "interval": interval,
+                    "period": period,
+                }
             }
         }
         return _normalize_datetime(result)
@@ -130,13 +226,20 @@ def fetch_ohlc_batch_tool(
     try:
         # Validate batch size to prevent excessive API requests
         if len(requests) > MAX_BATCH_SIZE:
+            error_type = "BatchSizeExceeded"
             result = {
                 "success": False,
                 "error": {
-                    "type": "BatchSizeExceeded",
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
                     "message": f"Batch size ({len(requests)}) exceeds maximum allowed ({MAX_BATCH_SIZE})",
-                    "max_batch_size": MAX_BATCH_SIZE,
-                    "requested_size": len(requests),
+                    "hint": _generate_hint(error_type),
+                    "recoverable": _is_recoverable(error_type),
+                    "suggested_tools": _suggest_tools(error_type),
+                    "context": {
+                        "max_batch_size": MAX_BATCH_SIZE,
+                        "requested_size": len(requests),
+                    }
                 }
             }
             return _normalize_datetime(result)
@@ -168,11 +271,17 @@ def fetch_ohlc_batch_tool(
         failed_data = [
             {
                 "type": error.error_type,
+                "category": _categorize_error(error.error_type),
                 "message": error.error_message,
-                "pair": error.pair,
-                "interval": error.interval,
-                "period": error.period,
-                "timestamp": error.timestamp,
+                "hint": _generate_hint(error.error_type),
+                "recoverable": _is_recoverable(error.error_type),
+                "suggested_tools": _suggest_tools(error.error_type),
+                "context": {
+                    "pair": error.pair,
+                    "interval": error.interval,
+                    "period": error.period,
+                    "timestamp": error.timestamp,
+                }
             }
             for error in response.failed
         ]
@@ -190,11 +299,17 @@ def fetch_ohlc_batch_tool(
         }
         return _normalize_datetime(result)
     except Exception as e:
+        error_type = "UnexpectedError"
         result = {
             "success": False,
             "error": {
-                "type": "UnexpectedError",
+                "type": error_type,
+                "category": _categorize_error(error_type),
                 "message": str(e),
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {}
             }
         }
         return _normalize_datetime(result)
@@ -223,11 +338,17 @@ def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
         }
         return _normalize_datetime(result)
     except Exception as e:
+        error_type = "UnexpectedError"
         result = {
             "success": False,
             "error": {
-                "type": "UnexpectedError",
+                "type": error_type,
+                "category": _categorize_error(error_type),
                 "message": str(e),
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {}
             }
         }
         return _normalize_datetime(result)
@@ -256,11 +377,17 @@ def list_available_timeframes_tool(preset_only: bool = False) -> Dict[str, Any]:
         }
         return _normalize_datetime(result)
     except Exception as e:
+        error_type = "UnexpectedError"
         result = {
             "success": False,
             "error": {
-                "type": "UnexpectedError",
+                "type": error_type,
+                "category": _categorize_error(error_type),
                 "message": str(e),
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {}
             }
         }
         return _normalize_datetime(result)
