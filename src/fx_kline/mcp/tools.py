@@ -19,6 +19,10 @@ from ..core import (
 # Maximum number of requests allowed in a single batch
 MAX_BATCH_SIZE = 50
 
+# Supported interval ranges for specialized tools
+INTRADAY_INTERVALS = {"1m", "5m", "15m", "30m", "1h", "4h"}
+DAILY_INTERVALS = {"1d", "1wk", "1mo"}
+
 
 def _categorize_error(error_type: str) -> str:
     """
@@ -315,6 +319,206 @@ def fetch_ohlc_batch_tool(
         return _normalize_datetime(result)
 
 
+def get_intraday_ohlc(
+    pair: str,
+    interval: str = "1h",
+    period: str = "5d",
+    exclude_weekends: bool = True
+) -> Dict[str, Any]:
+    """
+    Fetch intraday OHLC data for scalping and day trading (1m-4h intervals).
+
+    Args:
+        pair: Currency pair code (e.g., "USDJPY", "EURUSD", "XAUUSD")
+        interval: Intraday timeframe (1m, 5m, 15m, 30m, 1h, 4h)
+        period: Time period (e.g., "1d", "5d", "30d")
+        exclude_weekends: Filter out weekend data (default: True)
+
+    Returns:
+        Dictionary containing OHLC data or error information
+    """
+    try:
+        # Validate interval is intraday
+        if interval.lower() not in INTRADAY_INTERVALS:
+            error_type = "ValidationError"
+            valid_intervals = ", ".join(sorted(INTRADAY_INTERVALS))
+            result = {
+                "success": False,
+                "error": {
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
+                    "message": f"Invalid intraday interval: {interval}. This tool only supports intraday intervals.",
+                    "hint": f"Use one of: {valid_intervals}. For daily/weekly/monthly data, use 'get_daily_ohlc' instead.",
+                    "recoverable": True,
+                    "suggested_tools": ["list_available_timeframes", "get_daily_ohlc"],
+                    "context": {
+                        "attempted_interval": interval,
+                        "valid_intervals": list(INTRADAY_INTERVALS),
+                        "pair": pair,
+                    }
+                }
+            }
+            return _normalize_datetime(result)
+
+        request = OHLCRequest(pair=pair, interval=interval, period=period)
+        response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
+
+        if response.total_succeeded > 0:
+            ohlc_data = response.successful[0]
+            result = {
+                "success": True,
+                "data": {
+                    "pair": ohlc_data.pair,
+                    "interval": ohlc_data.interval,
+                    "period": ohlc_data.period,
+                    "data_count": ohlc_data.data_count,
+                    "timestamp_jst": ohlc_data.timestamp_jst,
+                    "columns": ohlc_data.columns,
+                    "rows": ohlc_data.rows,
+                }
+            }
+            return _normalize_datetime(result)
+        else:
+            error = response.failed[0]
+            error_type = error.error_type
+            result = {
+                "success": False,
+                "error": {
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
+                    "message": error.error_message,
+                    "hint": _generate_hint(error_type),
+                    "recoverable": _is_recoverable(error_type),
+                    "suggested_tools": _suggest_tools(error_type),
+                    "context": {
+                        "pair": error.pair,
+                        "interval": error.interval,
+                        "period": error.period,
+                    }
+                }
+            }
+            return _normalize_datetime(result)
+    except Exception as e:
+        error_type = "UnexpectedError"
+        result = {
+            "success": False,
+            "error": {
+                "type": error_type,
+                "category": _categorize_error(error_type),
+                "message": str(e),
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {
+                    "pair": pair,
+                    "interval": interval,
+                    "period": period,
+                }
+            }
+        }
+        return _normalize_datetime(result)
+
+
+def get_daily_ohlc(
+    pair: str,
+    interval: str = "1d",
+    period: str = "30d",
+    exclude_weekends: bool = True
+) -> Dict[str, Any]:
+    """
+    Fetch daily/weekly/monthly OHLC data for swing and position trading.
+
+    Args:
+        pair: Currency pair code (e.g., "USDJPY", "EURUSD", "XAUUSD")
+        interval: Daily timeframe (1d, 1wk, 1mo)
+        period: Time period (e.g., "30d", "3mo", "1y")
+        exclude_weekends: Filter out weekend data (default: True)
+
+    Returns:
+        Dictionary containing OHLC data or error information
+    """
+    try:
+        # Validate interval is daily/weekly/monthly
+        if interval.lower() not in DAILY_INTERVALS:
+            error_type = "ValidationError"
+            valid_intervals = ", ".join(sorted(DAILY_INTERVALS))
+            result = {
+                "success": False,
+                "error": {
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
+                    "message": f"Invalid daily interval: {interval}. This tool only supports daily/weekly/monthly intervals.",
+                    "hint": f"Use one of: {valid_intervals}. For intraday data, use 'get_intraday_ohlc' instead.",
+                    "recoverable": True,
+                    "suggested_tools": ["list_available_timeframes", "get_intraday_ohlc"],
+                    "context": {
+                        "attempted_interval": interval,
+                        "valid_intervals": list(DAILY_INTERVALS),
+                        "pair": pair,
+                    }
+                }
+            }
+            return _normalize_datetime(result)
+
+        request = OHLCRequest(pair=pair, interval=interval, period=period)
+        response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
+
+        if response.total_succeeded > 0:
+            ohlc_data = response.successful[0]
+            result = {
+                "success": True,
+                "data": {
+                    "pair": ohlc_data.pair,
+                    "interval": ohlc_data.interval,
+                    "period": ohlc_data.period,
+                    "data_count": ohlc_data.data_count,
+                    "timestamp_jst": ohlc_data.timestamp_jst,
+                    "columns": ohlc_data.columns,
+                    "rows": ohlc_data.rows,
+                }
+            }
+            return _normalize_datetime(result)
+        else:
+            error = response.failed[0]
+            error_type = error.error_type
+            result = {
+                "success": False,
+                "error": {
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
+                    "message": error.error_message,
+                    "hint": _generate_hint(error_type),
+                    "recoverable": _is_recoverable(error_type),
+                    "suggested_tools": _suggest_tools(error_type),
+                    "context": {
+                        "pair": error.pair,
+                        "interval": error.interval,
+                        "period": error.period,
+                    }
+                }
+            }
+            return _normalize_datetime(result)
+    except Exception as e:
+        error_type = "UnexpectedError"
+        result = {
+            "success": False,
+            "error": {
+                "type": error_type,
+                "category": _categorize_error(error_type),
+                "message": str(e),
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {
+                    "pair": pair,
+                    "interval": interval,
+                    "period": period,
+                }
+            }
+        }
+        return _normalize_datetime(result)
+
+
 def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
     """
     List all available currency pairs.
@@ -387,6 +591,104 @@ def list_available_timeframes_tool(preset_only: bool = False) -> Dict[str, Any]:
                 "hint": _generate_hint(error_type),
                 "recoverable": _is_recoverable(error_type),
                 "suggested_tools": _suggest_tools(error_type),
+                "context": {}
+            }
+        }
+        return _normalize_datetime(result)
+
+
+# New simplified tool names (aliases for better UX)
+def get_ohlc_batch(
+    requests: List[Dict[str, str]],
+    exclude_weekends: bool = True
+) -> Dict[str, Any]:
+    """
+    Alias for fetch_ohlc_batch_tool with a simpler name.
+
+    Fetch OHLC data for multiple currency pairs and timeframes in parallel.
+    """
+    return fetch_ohlc_batch_tool(requests, exclude_weekends)
+
+
+def list_pairs(preset_only: bool = False) -> Dict[str, Any]:
+    """
+    Alias for list_available_pairs_tool with a simpler name.
+
+    List all available currency pairs that can be fetched.
+    """
+    return list_available_pairs_tool(preset_only)
+
+
+def list_timeframes(preset_only: bool = False) -> Dict[str, Any]:
+    """
+    Alias for list_available_timeframes_tool with a simpler name.
+
+    List all available timeframes/intervals for data fetching.
+    """
+    return list_available_timeframes_tool(preset_only)
+
+
+def ping() -> Dict[str, Any]:
+    """
+    Health check endpoint to verify server connectivity and capabilities.
+
+    Returns:
+        Dictionary containing server status and capabilities
+    """
+    try:
+        from importlib.metadata import version, PackageNotFoundError
+        from datetime import datetime, timezone
+
+        # Get version
+        try:
+            server_version = version("fx-kline")
+        except PackageNotFoundError:
+            server_version = "0.1.0"
+
+        # Get current timestamp
+        current_time = datetime.now(timezone.utc)
+
+        # Get supported pairs and timeframes counts
+        all_pairs = get_supported_pairs()
+        all_timeframes = get_supported_timeframes()
+
+        result = {
+            "success": True,
+            "server": "fx-kline",
+            "version": server_version,
+            "status": "healthy",
+            "timestamp": current_time.isoformat(),
+            "capabilities": {
+                "supported_pairs": len(all_pairs),
+                "supported_timeframes": len(all_timeframes),
+                "max_batch_size": MAX_BATCH_SIZE,
+                "features": [
+                    "intraday_ohlc",
+                    "daily_ohlc",
+                    "batch_requests",
+                    "weekend_filtering",
+                    "jst_timezone",
+                ]
+            },
+            "endpoints": {
+                "data_fetching": ["get_intraday_ohlc", "get_daily_ohlc", "get_ohlc_batch"],
+                "metadata": ["list_pairs", "list_timeframes"],
+                "health": ["ping"],
+                "deprecated": ["fetch_ohlc", "fetch_ohlc_batch", "list_available_pairs", "list_available_timeframes"]
+            }
+        }
+        return _normalize_datetime(result)
+    except Exception as e:
+        error_type = "UnexpectedError"
+        result = {
+            "success": False,
+            "error": {
+                "type": error_type,
+                "category": _categorize_error(error_type),
+                "message": str(e),
+                "hint": "Server health check failed. Please check server logs.",
+                "recoverable": False,
+                "suggested_tools": [],
                 "context": {}
             }
         }
