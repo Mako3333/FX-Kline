@@ -26,7 +26,10 @@ from .tools import (
     list_pairs,
     list_timeframes,
     ping,
+    INTRADAY_INTERVALS,
+    DAILY_INTERVALS,
 )
+from ..core import get_supported_pairs, get_supported_timeframes
 
 
 # Configure logging
@@ -577,6 +580,133 @@ async def handle_call_tool(
                 text=json.dumps(error_result, indent=2, ensure_ascii=False)
             )
         ]
+
+
+@server.set_completions()
+async def handle_completions(
+    ref: types.CompletionRef,
+) -> list[types.Completion]:
+    """
+    Provide argument completion suggestions for tools.
+
+    Args:
+        ref: Completion reference containing tool name and argument name
+
+    Returns:
+        List of completion suggestions
+    """
+    # Completion for 'pair' parameter (all data fetching tools)
+    if ref.argument == "pair":
+        pairs = get_supported_pairs()
+        return [
+            types.Completion(
+                value=pair_code,
+                label=f"{pair_code} - {description}",
+                description=description
+            )
+            for pair_code, description in pairs.items()
+        ]
+
+    # Completion for 'interval' parameter
+    if ref.argument == "interval":
+        # Tool-specific interval suggestions
+        if ref.name == "get_intraday_ohlc":
+            # Only intraday intervals (1m-4h)
+            intervals = sorted(INTRADAY_INTERVALS)
+            descriptions = {
+                "1m": "1 minute - Ultra short-term scalping",
+                "5m": "5 minutes - Short-term scalping",
+                "15m": "15 minutes - Scalping/Day trading",
+                "30m": "30 minutes - Day trading",
+                "1h": "1 hour - Day trading (recommended)",
+                "4h": "4 hours - Swing day trading",
+            }
+        elif ref.name == "get_daily_ohlc":
+            # Only daily+ intervals (1d, 1wk, 1mo)
+            intervals = sorted(DAILY_INTERVALS)
+            descriptions = {
+                "1d": "1 day - Daily analysis (recommended)",
+                "1wk": "1 week - Weekly trends",
+                "1mo": "1 month - Monthly trends",
+            }
+        else:
+            # All intervals for deprecated/batch tools
+            timeframes = get_supported_timeframes()
+            return [
+                types.Completion(
+                    value=interval,
+                    label=f"{interval} - {description}",
+                    description=description
+                )
+                for interval, description in timeframes.items()
+            ]
+
+        return [
+            types.Completion(
+                value=interval,
+                label=f"{interval} - {descriptions.get(interval, interval)}",
+                description=descriptions.get(interval, interval)
+            )
+            for interval in intervals
+        ]
+
+    # Completion for 'period' parameter
+    if ref.argument == "period":
+        # Common period values with descriptions
+        period_suggestions = [
+            ("1d", "1 day - Very short term"),
+            ("5d", "5 days - Short term"),
+            ("30d", "30 days - Medium term (recommended)"),
+            ("3mo", "3 months - Quarterly"),
+            ("6mo", "6 months - Semi-annual"),
+            ("1y", "1 year - Annual"),
+            ("2y", "2 years - Long term"),
+            ("5y", "5 years - Very long term"),
+            ("ytd", "Year to date"),
+            ("max", "Maximum available data"),
+        ]
+
+        return [
+            types.Completion(
+                value=period,
+                label=f"{period} - {description}",
+                description=description
+            )
+            for period, description in period_suggestions
+        ]
+
+    # Completion for 'preset_only' parameter
+    if ref.argument == "preset_only":
+        return [
+            types.Completion(
+                value="false",
+                label="false - All available (default)",
+                description="Return all supported pairs/timeframes"
+            ),
+            types.Completion(
+                value="true",
+                label="true - Preset only",
+                description="Return only preset pairs/timeframes for UI"
+            ),
+        ]
+
+    # Completion for 'exclude_weekends' parameter
+    if ref.argument == "exclude_weekends":
+        return [
+            types.Completion(
+                value="true",
+                label="true - Exclude weekends (default)",
+                description="Filter out weekend data for cleaner analysis"
+            ),
+            types.Completion(
+                value="false",
+                label="false - Include weekends",
+                description="Include all data including weekends"
+            ),
+        ]
+
+    # No completions for other parameters
+    return []
 
 
 async def main():
