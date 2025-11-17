@@ -350,7 +350,7 @@ def get_intraday_ohlc(
                     "message": f"Invalid intraday interval: {interval}. This tool only supports intraday intervals.",
                     "hint": f"Use one of: {valid_intervals}. For daily/weekly/monthly data, use 'get_daily_ohlc' instead.",
                     "recoverable": True,
-                    "suggested_tools": ["list_available_timeframes", "get_daily_ohlc"],
+                    "suggested_tools": ["list_timeframes", "get_daily_ohlc"],
                     "context": {
                         "attempted_interval": interval,
                         "valid_intervals": list(INTRADAY_INTERVALS),
