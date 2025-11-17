@@ -319,47 +319,67 @@ def fetch_ohlc_batch_tool(
         return _normalize_datetime(result)
 
 
-def get_intraday_ohlc(
+def _fetch_ohlc_with_interval_validation(
     pair: str,
-    interval: str = "1h",
-    period: str = "5d",
-    exclude_weekends: bool = True
+    interval: str,
+    period: str,
+    exclude_weekends: bool,
+    valid_intervals: set,
+    interval_type: str,
+    other_tool_name: str,
 ) -> Dict[str, Any]:
     """
-    Fetch intraday OHLC data for scalping and day trading (1m-4h intervals).
+    Common implementation for OHLC fetching with interval validation.
+
+    This helper function reduces code duplication between get_intraday_ohlc
+    and get_daily_ohlc by providing a common implementation with configurable
+    interval validation.
 
     Args:
-        pair: Currency pair code (e.g., "USDJPY", "EURUSD", "XAUUSD")
-        interval: Intraday timeframe (1m, 5m, 15m, 30m, 1h, 4h)
-        period: Time period (e.g., "1d", "5d", "30d")
-        exclude_weekends: Filter out weekend data (default: True)
+        pair: Currency pair code
+        interval: Timeframe interval
+        period: Time period to fetch
+        exclude_weekends: Filter out weekend data
+        valid_intervals: Set of valid intervals for this tool
+        interval_type: "intraday" or "daily" for error messages
+        other_tool_name: Name of the alternative tool to suggest
 
     Returns:
         Dictionary containing OHLC data or error information
     """
     try:
-        # Validate interval is intraday
-        if interval.lower() not in INTRADAY_INTERVALS:
+        # Validate interval is appropriate for this tool
+        if interval.lower() not in valid_intervals:
             error_type = "ValidationError"
-            valid_intervals = ", ".join(sorted(INTRADAY_INTERVALS))
+            valid_intervals_str = ", ".join(sorted(valid_intervals))
+
+            # Generate appropriate error message based on interval type
+            if interval_type == "intraday":
+                tool_description = "intraday intervals"
+                suggestion = "For daily/weekly/monthly data, use 'get_daily_ohlc' instead."
+            else:  # daily
+                tool_description = "daily/weekly/monthly intervals"
+                suggestion = "For intraday data, use 'get_intraday_ohlc' instead."
+
             result = {
                 "success": False,
                 "error": {
                     "type": error_type,
                     "category": _categorize_error(error_type),
-                    "message": f"Invalid intraday interval: {interval}. This tool only supports intraday intervals.",
-                    "hint": f"Use one of: {valid_intervals}. For daily/weekly/monthly data, use 'get_daily_ohlc' instead.",
+                    "message": f"Invalid {interval_type} interval: {interval}. This tool only supports {tool_description}.",
+                    "hint": f"Use one of: {valid_intervals_str}. {suggestion}",
                     "recoverable": True,
-                    "suggested_tools": ["list_timeframes", "get_daily_ohlc"],
+                    "suggested_tools": ["list_timeframes", other_tool_name],
                     "context": {
                         "attempted_interval": interval,
-                        "valid_intervals": list(INTRADAY_INTERVALS),
+                        "valid_intervals": list(valid_intervals),
                         "pair": pair,
                     }
                 }
             }
             return _normalize_datetime(result)
 
+        # Fetch data using common code path
         request = OHLCRequest(pair=pair, interval=interval, period=period)
         response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
 
@@ -417,6 +437,35 @@ def get_intraday_ohlc(
             }
         }
         return _normalize_datetime(result)
+
+
+def get_intraday_ohlc(
+    pair: str,
+    interval: str = "1h",
+    period: str = "5d",
+    exclude_weekends: bool = True
+) -> Dict[str, Any]:
+    """
+    Fetch intraday OHLC data for scalping and day trading (1m-4h intervals).
+
+    Args:
+        pair: Currency pair code (e.g., "USDJPY", "EURUSD", "XAUUSD")
+        interval: Intraday timeframe (1m, 5m, 15m, 30m, 1h, 4h)
+        period: Time period (e.g., "1d", "5d", "30d")
+        exclude_weekends: Filter out weekend data (default: True)
+
+    Returns:
+        Dictionary containing OHLC data or error information
+    """
+    return _fetch_ohlc_with_interval_validation(
+        pair=pair,
+        interval=interval,
+        period=period,
+        exclude_weekends=exclude_weekends,
+        valid_intervals=INTRADAY_INTERVALS,
+        interval_type="intraday",
+        other_tool_name="get_daily_ohlc",
+    )
 
 
 def get_daily_ohlc(
@@ -437,86 +486,15 @@ def get_daily_ohlc(
     Returns:
         Dictionary containing OHLC data or error information
     """
-    try:
-        # Validate interval is daily/weekly/monthly
-        if interval.lower() not in DAILY_INTERVALS:
-            error_type = "ValidationError"
-            valid_intervals = ", ".join(sorted(DAILY_INTERVALS))
-            result = {
-                "success": False,
-                "error": {
-                    "type": error_type,
-                    "category": _categorize_error(error_type),
-                    "message": f"Invalid daily interval: {interval}. This tool only supports daily/weekly/monthly intervals.",
-                    "hint": f"Use one of: {valid_intervals}. For intraday data, use 'get_intraday_ohlc' instead.",
-                    "recoverable": True,
-                    "suggested_tools": ["list_timeframes", "get_intraday_ohlc"],
-                    "context": {
-                        "attempted_interval": interval,
-                        "valid_intervals": list(DAILY_INTERVALS),
-                        "pair": pair,
-                    }
-                }
-            }
-            return _normalize_datetime(result)
-
-        request = OHLCRequest(pair=pair, interval=interval, period=period)
-        response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
-
-        if response.total_succeeded > 0:
-            ohlc_data = response.successful[0]
-            result = {
-                "success": True,
-                "data": {
-                    "pair": ohlc_data.pair,
-                    "interval": ohlc_data.interval,
-                    "period": ohlc_data.period,
-                    "data_count": ohlc_data.data_count,
-                    "timestamp_jst": ohlc_data.timestamp_jst,
-                    "columns": ohlc_data.columns,
-                    "rows": ohlc_data.rows,
-                }
-            }
-            return _normalize_datetime(result)
-        else:
-            error = response.failed[0]
-            error_type = error.error_type
-            result = {
-                "success": False,
-                "error": {
-                    "type": error_type,
-                    "category": _categorize_error(error_type),
-                    "message": error.error_message,
-                    "hint": _generate_hint(error_type),
-                    "recoverable": _is_recoverable(error_type),
-                    "suggested_tools": _suggest_tools(error_type),
-                    "context": {
-                        "pair": error.pair,
-                        "interval": error.interval,
-                        "period": error.period,
-                    }
-                }
-            }
-            return _normalize_datetime(result)
-    except Exception as e:
-        error_type = "UnexpectedError"
-        result = {
-            "success": False,
-            "error": {
-                "type": error_type,
-                "category": _categorize_error(error_type),
-                "message": str(e),
-                "hint": _generate_hint(error_type),
-                "recoverable": _is_recoverable(error_type),
-                "suggested_tools": _suggest_tools(error_type),
-                "context": {
-                    "pair": pair,
-                    "interval": interval,
-                    "period": period,
-                }
-            }
-        }
-        return _normalize_datetime(result)
+    return _fetch_ohlc_with_interval_validation(
+        pair=pair,
+        interval=interval,
+        period=period,
+        exclude_weekends=exclude_weekends,
+        valid_intervals=DAILY_INTERVALS,
+        interval_type="daily",
+        other_tool_name="get_intraday_ohlc",
+    )
 
 
 def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
