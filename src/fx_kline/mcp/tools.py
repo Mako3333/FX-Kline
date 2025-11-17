@@ -56,7 +56,7 @@ def _generate_hint(error_type: str) -> str:
         Hint message for error recovery
     """
     hints = {
-        "ValidationError": "Call 'list_available_pairs' or 'list_available_timeframes' to see supported values",
+        "ValidationError": "Call 'list_pairs' or 'list_timeframes' to see supported values",
         "BatchSizeExceeded": f"Reduce the number of requests to {MAX_BATCH_SIZE} or fewer and try again",
         "NoDataAvailable": "Try extending the time period or choosing a different interval",
         "AllWeekendData": "Extend the time period to include weekdays, or set exclude_weekends=false",
