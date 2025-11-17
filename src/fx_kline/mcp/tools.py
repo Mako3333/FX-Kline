@@ -175,6 +175,10 @@ def fetch_ohlc_tool(
                     "hint": _generate_hint(error_type),
                     "recoverable": _is_recoverable(error_type),
                     "suggested_tools": _suggest_tools(error_type),
+                    # Preserve top-level fields for backward compatibility
+                    "pair": error.pair,
+                    "interval": error.interval,
+                    "period": error.period,
                     "context": {
                         "pair": error.pair,
                         "interval": error.interval,
@@ -194,6 +198,10 @@ def fetch_ohlc_tool(
                 "hint": _generate_hint(error_type),
                 "recoverable": _is_recoverable(error_type),
                 "suggested_tools": _suggest_tools(error_type),
+                # Preserve top-level fields for backward compatibility
+                "pair": pair,
+                "interval": interval,
+                "period": period,
                 "context": {
                     "pair": pair,
                     "interval": interval,
@@ -280,6 +288,10 @@ def fetch_ohlc_batch_tool(
                 "hint": _generate_hint(error.error_type),
                 "recoverable": _is_recoverable(error.error_type),
                 "suggested_tools": _suggest_tools(error.error_type),
+                # Preserve top-level fields for backward compatibility
+                "pair": error.pair,
+                "interval": error.interval,
+                "period": error.period,
                 "context": {
                     "pair": error.pair,
                     "interval": error.interval,
