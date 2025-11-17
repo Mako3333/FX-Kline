@@ -96,7 +96,7 @@ def _suggest_tools(error_type: str) -> List[str]:
         List of suggested tool names
     """
     suggestions = {
-        "ValidationError": ["list_available_pairs", "list_available_timeframes"],
+        "ValidationError": ["list_pairs", "list_timeframes"],
         "NoDataAvailable": [],
         "AllWeekendData": [],
         "BatchSizeExceeded": [],
