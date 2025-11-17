@@ -370,6 +370,10 @@ def _fetch_ohlc_with_interval_validation(
                     "hint": f"Use one of: {valid_intervals_str}. {suggestion}",
                     "recoverable": True,
                     "suggested_tools": ["list_timeframes", other_tool_name],
+                    # Preserve top-level fields for backward compatibility
+                    "pair": pair,
+                    "interval": interval,
+                    "period": period,
                     "context": {
                         "attempted_interval": interval,
                         "valid_intervals": list(valid_intervals),
@@ -410,6 +414,10 @@ def _fetch_ohlc_with_interval_validation(
                     "hint": _generate_hint(error_type),
                     "recoverable": _is_recoverable(error_type),
                     "suggested_tools": _suggest_tools(error_type),
+                    # Preserve top-level fields for backward compatibility
+                    "pair": error.pair,
+                    "interval": error.interval,
+                    "period": error.period,
                     "context": {
                         "pair": error.pair,
                         "interval": error.interval,
@@ -429,6 +437,10 @@ def _fetch_ohlc_with_interval_validation(
                 "hint": _generate_hint(error_type),
                 "recoverable": _is_recoverable(error_type),
                 "suggested_tools": _suggest_tools(error_type),
+                # Preserve top-level fields for backward compatibility
+                "pair": pair,
+                "interval": interval,
+                "period": period,
                 "context": {
                     "pair": pair,
                     "interval": interval,
