@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 from importlib.metadata import version, PackageNotFoundError
+from typing import Any
 
 from mcp.server.models import InitializationOptions
 from mcp.server import NotificationOptions, Server
@@ -464,6 +465,40 @@ async def handle_list_tools() -> list[types.Tool]:
     ]
 
 
+def _to_bool(value: Any, default: bool) -> bool:
+    """
+    Convert argument value to boolean, handling string representations.
+
+    This helper ensures backward compatibility with clients that may send
+    boolean parameters as strings ("true"/"false") instead of actual booleans.
+
+    Args:
+        value: The value to convert (bool, str, or None)
+        default: Default value if value is None
+
+    Returns:
+        Boolean value
+
+    Examples:
+        >>> _to_bool(True, False)
+        True
+        >>> _to_bool("true", False)
+        True
+        >>> _to_bool("false", True)
+        False
+        >>> _to_bool(None, True)
+        True
+    """
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in ("true", "1", "yes")
+    # For other types, use Python's truthiness
+    return bool(value)
+
+
 @server.call_tool()
 async def handle_call_tool(
     name: str, arguments: dict | None
@@ -491,7 +526,7 @@ async def handle_call_tool(
                 pair=arguments["pair"],
                 interval=arguments.get("interval", "1h"),
                 period=arguments.get("period", "5d"),
-                exclude_weekends=arguments.get("exclude_weekends", True),
+                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
             )
         elif name == "get_daily_ohlc":
             # Validate required parameters
@@ -502,7 +537,7 @@ async def handle_call_tool(
                 pair=arguments["pair"],
                 interval=arguments.get("interval", "1d"),
                 period=arguments.get("period", "30d"),
-                exclude_weekends=arguments.get("exclude_weekends", True),
+                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
             )
         elif name == "fetch_ohlc":
             # Validate required parameters
@@ -513,7 +548,7 @@ async def handle_call_tool(
                 pair=arguments["pair"],
                 interval=arguments.get("interval", "1d"),
                 period=arguments.get("period", "30d"),
-                exclude_weekends=arguments.get("exclude_weekends", True),
+                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
             )
         elif name == "fetch_ohlc_batch":
             # Validate required parameters
@@ -522,15 +557,15 @@ async def handle_call_tool(
 
             result = fetch_ohlc_batch_tool(
                 requests=arguments["requests"],
-                exclude_weekends=arguments.get("exclude_weekends", True),
+                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
             )
         elif name == "list_available_pairs":
             result = list_available_pairs_tool(
-                preset_only=arguments.get("preset_only", False)
+                preset_only=_to_bool(arguments.get("preset_only"), False)
             )
         elif name == "list_available_timeframes":
             result = list_available_timeframes_tool(
-                preset_only=arguments.get("preset_only", False)
+                preset_only=_to_bool(arguments.get("preset_only"), False)
             )
         elif name == "get_ohlc_batch":
             # Validate required parameters
@@ -539,15 +574,15 @@ async def handle_call_tool(
 
             result = get_ohlc_batch(
                 requests=arguments["requests"],
-                exclude_weekends=arguments.get("exclude_weekends", True),
+                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
             )
         elif name == "list_pairs":
             result = list_pairs(
-                preset_only=arguments.get("preset_only", False)
+                preset_only=_to_bool(arguments.get("preset_only"), False)
             )
         elif name == "list_timeframes":
             result = list_timeframes(
-                preset_only=arguments.get("preset_only", False)
+                preset_only=_to_bool(arguments.get("preset_only"), False)
             )
         elif name == "ping":
             result = ping()
@@ -679,12 +714,12 @@ async def handle_completions(
     if ref.argument == "preset_only":
         return [
             types.Completion(
-                value="false",
+                value=False,
                 label="false - All available (default)",
                 description="Return all supported pairs/timeframes"
             ),
             types.Completion(
-                value="true",
+                value=True,
                 label="true - Preset only",
                 description="Return only preset pairs/timeframes for UI"
             ),
@@ -694,12 +729,12 @@ async def handle_completions(
     if ref.argument == "exclude_weekends":
         return [
             types.Completion(
-                value="true",
+                value=True,
                 label="true - Exclude weekends (default)",
                 description="Filter out weekend data for cleaner analysis"
             ),
             types.Completion(
-                value="false",
+                value=False,
                 label="false - Include weekends",
                 description="Include all data including weekends"
             ),
