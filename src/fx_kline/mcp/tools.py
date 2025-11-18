@@ -248,6 +248,9 @@ def fetch_ohlc_batch_tool(
                     "hint": _generate_hint(error_type),
                     "recoverable": _is_recoverable(error_type),
                     "suggested_tools": _suggest_tools(error_type),
+                    # Preserve top-level fields for backward compatibility
+                    "max_batch_size": MAX_BATCH_SIZE,
+                    "requested_size": len(requests),
                     "context": {
                         "max_batch_size": MAX_BATCH_SIZE,
                         "requested_size": len(requests),
@@ -292,6 +295,7 @@ def fetch_ohlc_batch_tool(
                 "pair": error.pair,
                 "interval": error.interval,
                 "period": error.period,
+                "timestamp": error.timestamp,
                 "context": {
                     "pair": error.pair,
                     "interval": error.interval,
