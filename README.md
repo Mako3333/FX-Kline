@@ -279,12 +279,34 @@ uv sync --extra mcp
 
 ### 🛠️ 実装済みMCPツール
 
-| ツール名 | 機能 |
-|---------|------|
-| `fetch_ohlc` | 単一通貨ペアのデータ取得 |
-| `fetch_ohlc_batch` | 複数リクエストの並列バッチ取得 |
-| `list_available_pairs` | 利用可能な通貨ペア一覧 |
-| `list_available_timeframes` | 利用可能な時間足一覧 |
+#### 推奨ツール（v0.2.0+）
+
+| ツール名 | 機能 | 用途 |
+|---------|------|------|
+| `get_intraday_ohlc` | 日中足データ取得（1m-4h） | スキャルピング・デイトレード |
+| `get_daily_ohlc` | 日足以上データ取得（1d-1mo） | スイング・ポジション取引 |
+| `get_ohlc_batch` | 複数リクエストの並列バッチ取得 | 相関分析・ポートフォリオ分析 |
+| `list_pairs` | 利用可能な通貨ペア一覧 | ペアの確認・検証 |
+| `list_timeframes` | 利用可能な時間足一覧 | 時間足の確認・検証 |
+| `ping` | サーバーヘルスチェック | 接続確認・機能検出 |
+
+#### 非推奨ツール（2026-05-16削除予定）
+
+| ツール名 | 移行先 |
+|---------|--------|
+| `fetch_ohlc` | `get_intraday_ohlc` / `get_daily_ohlc` |
+| `fetch_ohlc_batch` | `get_ohlc_batch` |
+| `list_available_pairs` | `list_pairs` |
+| `list_available_timeframes` | `list_timeframes` |
+
+> 📖 移行ガイドは **[MIGRATION.md](./MIGRATION.md)** を参照してください。
+
+#### MCP 2025仕様対応 ✨
+
+- **ツールアノテーション**: readOnlyHint, idempotentHint, openWorldHint対応
+- **拡張エラーハンドリング**: category, hint, recoverable, suggested_toolsフィールド
+- **Completions機能**: パラメータ自動補完（pair, interval, period）
+- **改善された説明文**: 使用シーン、関連ツールのヒント付き
 
 ### 📚 使用例
 
@@ -292,7 +314,7 @@ uv sync --extra mcp
 ユーザー: 「USDJPY、EURUSD、GBPUSDの1時間足を過去5日分取得して、相関を分析して」
 
 Claude: データを取得します...
-        [fetch_ohlc_batch ツールを実行]
+        [get_ohlc_batch ツールを実行]
 
         相関分析結果:
         - USDJPY vs EURUSD: -0.65 (負の相関)
