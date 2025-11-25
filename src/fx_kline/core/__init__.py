@@ -61,6 +61,10 @@ from .timezone_utils import (
     get_business_day_offset_jst,
 )
 
+from .summary_consolidator import (
+    consolidate_reports_batch,
+)
+
 __all__ = [
     # Models
     "OHLCRequest",
@@ -110,4 +114,6 @@ __all__ = [
     "format_timestamp_jst",
     "get_jst_now",
     "get_business_day_offset_jst",
+    # Summary consolidator
+    "consolidate_reports_batch",
 ]
