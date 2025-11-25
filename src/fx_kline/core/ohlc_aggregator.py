@@ -149,8 +149,9 @@ def compute_rsi(closes: pd.Series, period: int = 14) -> Optional[float]:
     gains = delta.clip(lower=0)
     losses = -delta.clip(upper=0)
 
-    avg_gain = gains.rolling(window=period, min_periods=period).mean()
-    avg_loss = losses.rolling(window=period, min_periods=period).mean()
+    # Wilder's smoothing (EWM): alpha = 1/period
+    avg_gain = gains.ewm(alpha=1 / period, min_periods=period, adjust=False).mean()
+    avg_loss = losses.ewm(alpha=1 / period, min_periods=period, adjust=False).mean()
 
     avg_loss_safe = avg_loss.replace(0, np.nan)
     rs = avg_gain / avg_loss_safe
