@@ -3,7 +3,7 @@ name: Daily OHLC Analysis
 on:
   schedule:
     # 08:15 JST == 23:15 UTC (previous day), Monday-Friday only
-    - cron: "15 23 * * 1-5"
+    - cron: "15 23 * * 0-4"
   workflow_dispatch:
 
 permissions:
