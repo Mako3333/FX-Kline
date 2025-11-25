@@ -2,8 +2,8 @@ name: Daily OHLC Analysis
 
 on:
   schedule:
-    # 08:15 JST == 23:15 UTC (previous day)
-    - cron: "15 23 * * *"
+    # 08:15 JST == 23:15 UTC (previous day), Monday-Friday only
+    - cron: "15 23 * * 0-4"
   workflow_dispatch:
 
 permissions:
@@ -87,6 +87,9 @@ jobs:
       - name: Run analysis aggregator
         run: uv run python ohlc_aggregator.py --input-dir ./csv_data --output-dir ./reports --verbose
 
+      - name: Consolidate analysis summaries
+        run: uv run python consolidate_summaries.py --reports-dir ./reports --output-dir ./summary_reports --verbose
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -95,5 +98,6 @@ jobs:
           path: |
             csv_data/**/*.csv
             reports/**/*.json
+            summary_reports/**/*.json
           if-no-files-found: warn
           retention-days: 7
