@@ -29,7 +29,7 @@ jobs:
 
       - name: Fetch OHLC CSVs
         env:
-          PAIRS: "USDJPY EURUSD AUDJPY AUDUSD GBPJPY XAUUSD"
+          PAIRS: "USDJPY EURUSD AUDJPY AUDUSD EURJPY XAUUSD"
           INTERVALS: "1h 4h 1d"
           PERIOD_MAP: "1h:10d 4h:35d 1d:200d"
         run: |
