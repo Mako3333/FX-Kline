@@ -40,6 +40,9 @@ INTRADAY_REVERSAL_HOURS = 5  # Hours to confirm reversal
 DAILY_REVERSAL_CANDLES = 3  # Consecutive candles for reversal
 DAILY_PRICE_TOLERANCE_RATE = 0.005  # 0.5% tolerance for 1d levels (percentage-based)
 
+# 4H fallback merge tolerance (5 pips / 0.05 yen for JPY pairs)
+FOUR_HOUR_MERGE_TOLERANCE = 0.05
+
 logger = logging.getLogger(__name__)
 
 
@@ -152,9 +155,11 @@ def _rank_levels(
     *,
     sort_desc: bool,
     mode: str = "distance",
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
 ) -> List[float]:
     """
-    Pick levels based on priority mode.
+    Pick levels based on priority mode with optional price constraints.
 
     Args:
         candidates: List of (price, timestamp) tuples
@@ -163,6 +168,8 @@ def _rank_levels(
         sort_desc: If True, sort output descending (for resistances)
         mode: "distance" (prioritize proximity to current price) or
               "structure_first" (prioritize structural/historical importance)
+        min_price: If set, exclude candidates below this price (for resistances)
+        max_price: If set, exclude candidates above this price (for supports)
 
     Returns:
         List of selected price levels, sorted for readability
@@ -181,13 +188,25 @@ def _rank_levels(
         seen.add(key)
         unique.append((rounded, pd.Timestamp(ts)))
 
+    # Apply price constraints (filter before ranking)
+    filtered = unique
+    if min_price is not None:
+        filtered = [(p, ts) for p, ts in filtered if p >= min_price]
+    if max_price is not None:
+        filtered = [(p, ts) for p, ts in filtered if p <= max_price]
+
+    # Fallback: if filtering removes all candidates, use unfiltered top result
+    # This ensures we always return at least something when candidates exist
+    if not filtered and unique:
+        filtered = unique[:1]
+
     # Sort based on mode
     if mode == "structure_first":
         # Structure priority: older levels first (necklines), then proximity
-        ranked = sorted(unique, key=lambda item: (item[1].timestamp(), abs(item[0] - last_close)))
+        ranked = sorted(filtered, key=lambda item: (item[1].timestamp(), abs(item[0] - last_close)))
     else:  # mode == "distance"
         # Distance priority: closest to current price first, then recency
-        ranked = sorted(unique, key=lambda item: (abs(item[0] - last_close), -item[1].timestamp()))
+        ranked = sorted(filtered, key=lambda item: (abs(item[0] - last_close), -item[1].timestamp()))
 
     selected = [price for price, _ in ranked[:max_levels]]
     return sorted(selected, reverse=sort_desc)
@@ -213,6 +232,53 @@ def _fallback_extremes(df: pd.DataFrame, levels: int) -> Tuple[List[float], List
     supports = sorted(lows.nsmallest(levels).round(4).tolist())
     resistances = sorted(highs.nlargest(levels).round(4).tolist(), reverse=True)
     return supports, resistances
+
+
+def _merge_nearby_levels(
+    levels: List[float],
+    all_values: pd.Series,
+    tolerance: float,
+    is_support: bool,
+) -> List[float]:
+    """
+    Merge nearby levels that are too close together and find alternatives.
+
+    When two levels are within the tolerance threshold, keep the more extreme one
+    and try to find an alternative level that is sufficiently distant.
+
+    Args:
+        levels: List of price levels (supports sorted ascending, resistances descending)
+        all_values: Full series of prices to search for alternatives (lows for support, highs for resistance)
+        tolerance: Minimum distance required between levels
+        is_support: True for support levels (find lower alternatives), False for resistance
+
+    Returns:
+        List of merged/deduped price levels
+    """
+    if len(levels) < 2:
+        return levels
+
+    result: List[float] = [levels[0]]
+
+    for candidate in levels[1:]:
+        # Check if candidate is too close to any existing result level
+        too_close = any(abs(candidate - existing) < tolerance for existing in result)
+        if not too_close:
+            result.append(candidate)
+
+    # If we lost levels due to merging, try to find alternatives
+    if len(result) < len(levels):
+        all_sorted = sorted(all_values.round(4).unique(), reverse=not is_support)
+        for alt in all_sorted:
+            if len(result) >= len(levels):
+                break
+            # Check if this alternative is sufficiently distant from all existing levels
+            if all(abs(alt - existing) >= tolerance for existing in result):
+                result.append(alt)
+
+    # Re-sort the result
+    result = sorted(result, reverse=not is_support)
+    return result
 
 
 def _compute_intraday_reversals(
@@ -266,8 +332,20 @@ def _compute_intraday_reversals(
         if post_low.shape[0] >= INTRADAY_REVERSAL_HOURS and post_low["low"].min() > day_low:
             support_candidates.append((day_low, pd.Timestamp(low_time)))
 
-    supports = _rank_levels(support_candidates, last_close, levels, sort_desc=False)
-    resistances = _rank_levels(resistance_candidates, last_close, levels, sort_desc=True)
+    # For supports: no upper constraint (can be below current price)
+    supports = _rank_levels(
+        support_candidates, last_close, levels, sort_desc=False, max_price=last_close
+    )
+
+    # For resistances: must be above current price to be valid resistance
+    # Also ensure resistance is above the highest support to maintain structural integrity
+    min_resistance_price = last_close
+    if supports:
+        min_resistance_price = max(min_resistance_price, max(supports))
+
+    resistances = _rank_levels(
+        resistance_candidates, last_close, levels, sort_desc=True, min_price=min_resistance_price
+    )
     return supports, resistances
 
 
@@ -330,7 +408,16 @@ def _compute_four_hour_levels(
 
     # Fallback to simple extremes if no structural levels found
     if not support_candidates and not resistance_candidates:
-        return _fallback_extremes(window, levels)
+        supports, resistances = _fallback_extremes(window, levels)
+        # Merge nearby levels to avoid redundant information
+        # (e.g., 152.814 and 152.826 are effectively the same level)
+        supports = _merge_nearby_levels(
+            supports, window["low"], FOUR_HOUR_MERGE_TOLERANCE, is_support=True
+        )
+        resistances = _merge_nearby_levels(
+            resistances, window["high"], FOUR_HOUR_MERGE_TOLERANCE, is_support=False
+        )
+        return supports, resistances
 
     # Use structure_first mode to prioritize necklines over proximity
     supports = _rank_levels(support_candidates, last_close, levels, sort_desc=False, mode="structure_first")
@@ -409,6 +496,14 @@ def _compute_daily_reversals(
         sort_desc=True,
         mode="structure_first",
     )
+
+    # Fallback to simple extremes within lookback window if no qualified levels found
+    # This ensures daily levels are always within the 60-bar window, not the full DataFrame
+    if not supports:
+        supports, _ = _fallback_extremes(window, levels)
+    if not resistances:
+        _, resistances = _fallback_extremes(window, levels)
+
     return supports, resistances
 
 
