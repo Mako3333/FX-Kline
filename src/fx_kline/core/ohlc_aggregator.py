@@ -695,10 +695,11 @@ def _compute_daily_reversals(
 
     Algorithm:
         1. Analyze last ~30-60 business days (60 bars for 1d interval)
-        2. Filter to levels within ±0.5% of current price
-        3. High followed by 3 consecutive bearish candles → resistance
-        4. Low followed by 3 consecutive bullish candles → support
-        5. Prioritize oldest/deepest reversals (structural importance)
+        2. High followed by 3 consecutive bearish candles → resistance candidate
+        3. Low followed by 3 consecutive bullish candles → support candidate
+        4. Filter resistances to >= last_close, supports to <= last_close
+        5. Optionally filter by guardrail distance (ATR * 5) if ATR available
+        6. Prioritize oldest/deepest reversals (structural importance)
 
     Args:
         df: OHLC DataFrame with datetime column
@@ -750,6 +751,14 @@ def _compute_daily_reversals(
             for price, ts in resistance_candidates
             if abs(price - last_close) <= guardrail_distance
         ]
+
+    # Apply price-direction filter: resistances must be >= last_close, supports <= last_close
+    resistance_candidates = [
+        (price, ts) for price, ts in resistance_candidates if price >= last_close
+    ]
+    support_candidates = [
+        (price, ts) for price, ts in support_candidates if price <= last_close
+    ]
 
     supports = _rank_levels(
         support_candidates, last_close, levels, sort_desc=False, mode="structure_first"
