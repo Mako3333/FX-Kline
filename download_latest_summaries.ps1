@@ -52,8 +52,8 @@ if (-not (Test-Path $artifactSummary)) {
 if (-not (Test-Path $artifactSummary)) {
     Write-Host "❌ アーティファクト内に summary_reports が見つかりません" -ForegroundColor Red
     Write-Host "  探索パス候補:" -ForegroundColor Yellow
-    Write-Host "    " (Join-Path $tempDir "summary_reports") -ForegroundColor Yellow
-    Write-Host "    " (Join-Path $tempDir "$artifactName/summary_reports") -ForegroundColor Yellow
+    Write-Host "    $(Join-Path $tempDir \"summary_reports\")" -ForegroundColor Yellow
+    Write-Host "    $(Join-Path $tempDir \"$artifactName/summary_reports\")" -ForegroundColor Yellow
     exit 1
 }
 
@@ -62,5 +62,8 @@ if (Test-Path (Join-Path $root "summary_reports")) {
     Remove-Item -Path (Join-Path $root "summary_reports") -Recurse -Force
 }
 Copy-Item -Path $artifactSummary -Destination (Join-Path $root "summary_reports") -Recurse -Force
+
+# クリーンアップ
+Remove-Item -Path $tempDir -Recurse -Force
 
 Write-Host "✅ 最新のサマリーを summary_reports/ に展開しました" -ForegroundColor Green
