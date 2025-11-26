@@ -1,10 +1,15 @@
 """
-FX-Kline MCP Server Module
+FX-Kline MCP package.
 
-This module provides Model Context Protocol (MCP) server functionality
-for fetching FX OHLC data through Claude Desktop and other MCP clients.
+This package exposes:
+    - `fx_kline.mcp.tools`: MCP tool implementations (pure functions)
+    - `fx_kline.mcp.server`: MCP server wiring and stdio entrypoint
+
+The server module is intentionally not imported at package import time
+to avoid side effects (e.g., constructing a Server instance) during
+test discovery or when only the tools are needed.
 """
 
-from .server import main
+from . import tools
 
-__all__ = ["main"]
+__all__ = ["tools"]

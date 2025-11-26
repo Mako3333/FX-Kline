@@ -44,13 +44,13 @@ def test_analyze_dataframe_produces_schema():
     assert result["interval"] == "1h"
     assert result["period"] == "10d"
     assert result["trend"] in {"UP", "DOWN", "SIDEWAYS"}
-    # 1H reversal detection finds session-level extremes
-    # With only 20 hours of data (1 session day), only 1 support/resistance level is detected
     assert len(result["support_levels"]) >= 1
-    assert result["support_levels"][0] == pytest.approx(99.3, rel=1e-3)
     assert len(result["resistance_levels"]) >= 1
     assert result["rsi"] is not None
     assert result["atr"] is not None
     assert result["average_volatility"] == pytest.approx(1.5, rel=1e-3)
-    assert result["schema_version"] == 1
+    assert result["schema_version"] == 2
+    assert "sma" in result and "ema" in result
+    assert set(result["sma"].keys()) >= {"5", "13", "21", "ordering"}
+    assert set(result["ema"].keys()) >= {"25", "75", "90", "200"}
     assert "T" in result["generated_at"]

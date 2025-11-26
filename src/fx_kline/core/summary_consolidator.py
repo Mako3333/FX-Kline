@@ -1,7 +1,7 @@
 """
 Consolidate multi-timeframe analysis reports into unified summary files per currency pair.
 
-Takes individual analysis JSON files (schema_version=1) from reports/ directory
+Accepts individual analysis JSON files (schema_version >= 1) from reports/ directory
 and produces consolidated summary JSON files (schema_version=2) in summary_reports/ directory.
 """
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 _ANALYSIS_FILE_PATTERN = re.compile(r"^([A-Z]+)_(.+)_analysis\.json$")
 _EXPECTED_TIMEFRAMES = {"1h", "4h", "1d"}
 _TIMEFRAME_ORDER = ["1d", "4h", "1h"]  # Macro to micro view
-_CONSOLIDATION_VERSION = "1.0.0"
+_CONSOLIDATION_VERSION = "1.1.0"
 
 
 @dataclass
@@ -39,6 +39,9 @@ class TimeframeAnalysis:
     atr: Optional[float]
     average_volatility: Optional[float]
     data_timestamp: str
+    sma: Optional[dict] = None
+    ema: Optional[dict] = None
+    timeframe: Optional[str] = None
 
 
 @dataclass
@@ -125,9 +128,9 @@ def load_analysis_file(file_path: Path) -> Optional[TimeframeAnalysis]:
 
     # Validate schema version
     schema_version = data.get("schema_version")
-    if schema_version != 1:
+    if schema_version not in {1, 2}:
         logger.error(
-            f"Invalid schema_version in {file_path.name}: expected 1, got {schema_version}"
+            f"Invalid schema_version in {file_path.name}: expected 1 or 2, got {schema_version}"
         )
         return None
 
@@ -143,6 +146,9 @@ def load_analysis_file(file_path: Path) -> Optional[TimeframeAnalysis]:
             atr=data.get("atr"),
             average_volatility=data.get("average_volatility"),
             data_timestamp=data["generated_at"],  # Rename to data_timestamp
+            sma=data.get("sma"),
+            ema=data.get("ema"),
+            timeframe=data.get("timeframe") or data.get("interval"),
         )
     except KeyError as exc:
         logger.error(f"Missing required field in {file_path.name}: {exc}")

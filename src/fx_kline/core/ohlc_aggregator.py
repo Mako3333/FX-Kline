@@ -1,12 +1,14 @@
 """
 Aggregate OHLC CSV files and compute lightweight technical indicators.
 
-Outputs a JSON document (schema_version=1) per input file with:
+Outputs a JSON document (schema_version=2) per input file with:
     - trend
-    - support/resistance levels
+    - support/resistance levels (ATR-aware)
     - RSI14
     - ATR14
     - average volatility
+    - SMA slopes/order/deviation
+    - EMA reactions
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ import argparse
 import json
 import logging
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
@@ -32,16 +34,30 @@ _FILENAME_PATTERN = re.compile(
 _TREND_THRESHOLD = 0.002  # ~0.2% drift threshold before calling UP/DOWN
 
 # Support/Resistance detection constants
-INTRADAY_LOOKBACK_BARS = 240  # ~10 business days for 1h interval
-FOUR_HOUR_LOOKBACK_BARS = 84  # ~2 weeks for 4h interval (14 days * 6 bars/day)
-DAILY_LOOKBACK_BARS = 60  # ~30-60 business days for 1d interval
+INTRADAY_LOOKBACK_BARS = 120  # ~5 business days for 1h interval
+FOUR_HOUR_LOOKBACK_BARS = 60  # ~2 weeks for 4h interval (15 days * 4 bars/day)
+DAILY_LOOKBACK_BARS = 60  # ~3 months for 1d interval
 
 INTRADAY_REVERSAL_HOURS = 5  # Hours to confirm reversal
 DAILY_REVERSAL_CANDLES = 3  # Consecutive candles for reversal
-DAILY_PRICE_TOLERANCE_RATE = 0.005  # 0.5% tolerance for 1d levels (percentage-based)
 
-# 4H fallback merge tolerance (5 pips / 0.05 yen for JPY pairs)
-FOUR_HOUR_MERGE_TOLERANCE = 0.05
+# EMA reaction detection windows (bars inspected for reactions)
+EMA_REACTION_WINDOWS = {
+    "1h": 120,
+    "4h": 60,
+    "1d": 60,
+}
+
+# Moving average periods
+SMA_PERIODS = (5, 13, 21)
+EMA_PERIODS = (25, 75, 90, 200)
+SMA_SLOPE_LOOKBACK = 10
+
+# Slope classification thresholds
+SLOPE_STRONG_UP = 0.002
+SLOPE_UP = 0.0005
+SLOPE_DOWN = -0.0005
+SLOPE_STRONG_DOWN = -0.002
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +74,16 @@ class AnalysisResult:
     atr: Optional[float]
     average_volatility: Optional[float]
     generated_at: str
-    schema_version: int = 1
+    sma: dict = field(default_factory=dict)
+    ema: dict = field(default_factory=dict)
+    timeframe: Optional[str] = None
+    schema_version: int = 2
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        data = asdict(self)
+        if not data.get("timeframe"):
+            data["timeframe"] = self.interval
+        return data
 
 
 def parse_metadata_from_filename(file_path: Path) -> Tuple[str, str, str]:
@@ -140,6 +162,97 @@ def detect_trend(closes: pd.Series) -> str:
     return "SIDEWAYS"
 
 
+def _safe_round(value: Optional[float], digits: int = 4) -> Optional[float]:
+    """Round numeric values while preserving None/NaN."""
+    if value is None:
+        return None
+
+    try:
+        if pd.isna(value):
+            return None
+    except TypeError:
+        pass
+
+    return round(float(value), digits)
+
+
+def _linear_regression_slope(values: pd.Series) -> Optional[float]:
+    """Compute slope of a series using simple linear regression on normalized values."""
+    clean = values.dropna()
+    if clean.shape[0] < 2:
+        return None
+
+    base = clean.iloc[0]
+    normalized = clean / base if base != 0 else clean
+    x = np.arange(len(normalized))
+
+    try:
+        slope, _ = np.polyfit(x, normalized, 1)
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+    return float(slope)
+
+
+def _classify_slope_label(slope: Optional[float]) -> str:
+    """Map slope value to qualitative label per SOW thresholds."""
+    if slope is None:
+        return "flat"
+    if slope > SLOPE_STRONG_UP:
+        return "strong_up"
+    if slope > SLOPE_UP:
+        return "up"
+    if slope < SLOPE_STRONG_DOWN:
+        return "strong_down"
+    if slope < SLOPE_DOWN:
+        return "down"
+    return "flat"
+
+
+def compute_sma_features(closes: pd.Series) -> dict:
+    """Compute SMA latest, slope labels, ordering, and SMA5 deviation."""
+    result: dict = {}
+    clean = closes.dropna()
+    sma_series: dict[int, pd.Series] = {}
+
+    for period in SMA_PERIODS:
+        series = clean.rolling(window=period, min_periods=period).mean()
+        sma_series[period] = series
+        latest_val = series.dropna().iloc[-1] if not series.dropna().empty else None
+
+        slope_value = _linear_regression_slope(series.tail(SMA_SLOPE_LOOKBACK))
+        entry = {
+            "latest": _safe_round(latest_val, 4),
+            "slope": _classify_slope_label(slope_value),
+        }
+
+        if period == 5 and entry["latest"] is not None and not clean.empty:
+            entry["deviation"] = _safe_round(
+                (clean.iloc[-1] - entry["latest"]) / entry["latest"],
+                4,
+            )
+
+        result[str(period)] = entry
+
+    latest_values = {
+        period: series.dropna().iloc[-1] if not series.dropna().empty else None
+        for period, series in sma_series.items()
+    }
+
+    ordering = "mixed"
+    if all(latest_values.get(period) is not None for period in SMA_PERIODS):
+        sma5 = latest_values[5]  # type: ignore[index]
+        sma13 = latest_values[13]  # type: ignore[index]
+        sma21 = latest_values[21]  # type: ignore[index]
+        if sma5 > sma13 > sma21:
+            ordering = "bullish"
+        elif sma5 < sma13 < sma21:
+            ordering = "bearish"
+
+    result["ordering"] = ordering
+    return result
+
+
 def _get_time_column(df: pd.DataFrame) -> str:
     if "datetime" in df.columns:
         return "datetime"
@@ -195,10 +308,10 @@ def _rank_levels(
     if max_price is not None:
         filtered = [(p, ts) for p, ts in filtered if p <= max_price]
 
-    # Fallback: if filtering removes all candidates, use unfiltered top result
-    # This ensures we always return at least something when candidates exist
+    # Fallback: if filtering removes all candidates, return empty
+    # so the caller can decide whether to fallback to simple extremes
     if not filtered and unique:
-        filtered = unique[:1]
+        return []
 
     # Sort based on mode
     if mode == "structure_first":
@@ -281,8 +394,104 @@ def _merge_nearby_levels(
     return result
 
 
+def _merge_candidates_by_atr(
+    candidates: List[Tuple[float, pd.Timestamp]],
+    tolerance: float,
+    *,
+    is_support: bool,
+) -> List[Tuple[float, pd.Timestamp]]:
+    """
+    Merge nearby level candidates using ATR-based tolerance.
+
+    Preference: deeper wick (more extreme price), then recency.
+    """
+    if not candidates:
+        return []
+
+    if tolerance is None or tolerance <= 0:
+        deduped = {}
+        for price, ts in candidates:
+            key = round(float(price), 4)
+            if key not in deduped:
+                deduped[key] = (float(price), pd.Timestamp(ts))
+            else:
+                # Prefer more extreme, then newer
+                current_price, current_ts = deduped[key]
+                if (is_support and price < current_price) or (not is_support and price > current_price):
+                    deduped[key] = (float(price), pd.Timestamp(ts))
+                elif price == current_price and pd.Timestamp(ts) > current_ts:
+                    deduped[key] = (float(price), pd.Timestamp(ts))
+        return sorted(deduped.values(), key=lambda item: item[0], reverse=not is_support)
+
+    # Use a global midpoint so "more extreme" means farther from the center
+    # of all candidate prices, regardless of direction.
+    prices = [float(p) for p, _ in candidates]
+    global_mid = (min(prices) + max(prices)) / 2.0
+
+    clusters: List[List[Tuple[float, pd.Timestamp]]] = []
+    sorted_candidates = sorted(candidates, key=lambda item: item[0])
+
+    for price, ts in sorted_candidates:
+        placed = False
+        for cluster in clusters:
+            if any(abs(price - existing_price) < tolerance for existing_price, _ in cluster):
+                cluster.append((float(price), pd.Timestamp(ts)))
+                placed = True
+                break
+        if not placed:
+            clusters.append([(float(price), pd.Timestamp(ts))])
+
+    representatives: List[Tuple[float, pd.Timestamp]] = []
+    for cluster in clusters:
+        if is_support:
+            # For supports, pick the price farthest from the global midpoint
+            # to represent the deepest wick within the cluster.
+            extreme_price = max(cluster, key=lambda item: abs(item[0] - global_mid))[0]
+        else:
+            # For resistances, keep the strictly higher price as the extreme.
+            extreme_price = max(cluster, key=lambda item: item[0])[0]
+
+        extreme_items = [item for item in cluster if item[0] == extreme_price]
+        representative = sorted(extreme_items, key=lambda item: item[1], reverse=True)[0]
+        representatives.append(representative)
+
+    return sorted(representatives, key=lambda item: item[0], reverse=not is_support)
+
+
+def _fill_levels_from_candidates(
+    current_levels: List[float],
+    candidates: List[Tuple[float, pd.Timestamp]],
+    tolerance: float,
+    max_levels: int,
+    *,
+    is_support: bool,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+) -> List[float]:
+    """
+    Supplement merged levels by reintroducing distant candidates until max_levels is reached.
+    """
+    if len(current_levels) >= max_levels:
+        return sorted(current_levels, reverse=not is_support)
+
+    sorted_candidates = sorted(candidates, key=lambda item: item[1], reverse=True)
+    levels = list(current_levels)
+
+    for price, _ in sorted_candidates:
+        if len(levels) >= max_levels:
+            break
+        if min_price is not None and price < min_price:
+            continue
+        if max_price is not None and price > max_price:
+            continue
+        if all(abs(price - existing) >= tolerance for existing in levels):
+            levels.append(float(price))
+
+    return sorted(levels, reverse=not is_support)
+
+
 def _compute_intraday_reversals(
-    df: pd.DataFrame, ts_col: str, levels: int, last_close: float
+    df: pd.DataFrame, ts_col: str, levels: int, last_close: float, atr: Optional[float] = None
 ) -> Tuple[List[float], List[float]]:
     """
     Detect intraday support/resistance for 1-hour timeframe.
@@ -332,25 +541,58 @@ def _compute_intraday_reversals(
         if post_low.shape[0] >= INTRADAY_REVERSAL_HOURS and post_low["low"].min() > day_low:
             support_candidates.append((day_low, pd.Timestamp(low_time)))
 
-    # For supports: no upper constraint (can be below current price)
-    supports = _rank_levels(
-        support_candidates, last_close, levels, sort_desc=False, max_price=last_close
+    tolerance = atr if atr is not None else 0.0
+
+    merged_supports = _merge_candidates_by_atr(
+        support_candidates, tolerance, is_support=True
+    )
+    merged_resistances = _merge_candidates_by_atr(
+        resistance_candidates, tolerance, is_support=False
     )
 
-    # For resistances: must be above current price to be valid resistance
-    # Also ensure resistance is above the highest support to maintain structural integrity
+    supports = _rank_levels(
+        merged_supports, last_close, levels, sort_desc=False, max_price=last_close
+    )
+
     min_resistance_price = last_close
     if supports:
         min_resistance_price = max(min_resistance_price, max(supports))
 
     resistances = _rank_levels(
-        resistance_candidates, last_close, levels, sort_desc=True, min_price=min_resistance_price
+        merged_resistances, last_close, levels, sort_desc=True, min_price=min_resistance_price
     )
+
+    if tolerance > 0:
+        supports = _fill_levels_from_candidates(
+            supports,
+            support_candidates,
+            tolerance,
+            levels,
+            is_support=True,
+            max_price=last_close,
+        )
+        min_resistance_price = last_close if not supports else max(last_close, max(supports))
+        resistances = _fill_levels_from_candidates(
+            resistances,
+            resistance_candidates,
+            tolerance,
+            levels,
+            is_support=False,
+            min_price=min_resistance_price,
+        )
+
+    if not supports or not resistances:
+        fallback_supports, fallback_resistances = _fallback_extremes(window, levels)
+        if not supports:
+            supports = fallback_supports
+        if not resistances:
+            resistances = fallback_resistances
+
     return supports, resistances
 
 
 def _compute_four_hour_levels(
-    df: pd.DataFrame, ts_col: str, levels: int, last_close: float
+    df: pd.DataFrame, ts_col: str, levels: int, last_close: float, atr: Optional[float] = None
 ) -> Tuple[List[float], List[float]]:
     """
     Detect 4-hour support/resistance using weekly neckline logic.
@@ -394,49 +636,70 @@ def _compute_four_hour_levels(
         last_week = weekly.iloc[-1]
         prev_week = weekly.iloc[-2]
 
-        # Collect candidates from all weeks for structure-first ranking
-        if last_week.week_high > prev_week.week_high:
-            # Higher-high breakout: collect all weekly lows and highs
-            for _, week_row in weekly.iterrows():
-                support_candidates.append((float(week_row.week_low), pd.Timestamp(week_row.week_end)))
-                resistance_candidates.append((float(week_row.week_high), pd.Timestamp(week_row.week_end)))
-        elif last_week.week_low < prev_week.week_low:
-            # Lower-low breakdown: collect all weekly lows and highs
-            for _, week_row in weekly.iterrows():
-                support_candidates.append((float(week_row.week_low), pd.Timestamp(week_row.week_end)))
-                resistance_candidates.append((float(week_row.week_high), pd.Timestamp(week_row.week_end)))
+        if last_week.week_high > prev_week.week_high or last_week.week_low < prev_week.week_low:
+            for week_row in (prev_week, last_week):
+                support_candidates.append(
+                    (float(week_row.week_low), pd.Timestamp(week_row.week_end))
+                )
+                resistance_candidates.append(
+                    (float(week_row.week_high), pd.Timestamp(week_row.week_end))
+                )
 
-    # Fallback to simple extremes if no structural levels found
     if not support_candidates and not resistance_candidates:
-        supports, resistances = _fallback_extremes(window, levels)
-        # Merge nearby levels to avoid redundant information
-        # (e.g., 152.814 and 152.826 are effectively the same level)
-        supports = _merge_nearby_levels(
-            supports, window["low"], FOUR_HOUR_MERGE_TOLERANCE, is_support=True
-        )
-        resistances = _merge_nearby_levels(
-            resistances, window["high"], FOUR_HOUR_MERGE_TOLERANCE, is_support=False
-        )
-        return supports, resistances
+        fallback_supports, fallback_resistances = _fallback_extremes(window, levels)
+        last_ts = pd.Timestamp(window[ts_col].iloc[-1])
+        support_candidates = [(float(price), last_ts) for price in fallback_supports]
+        resistance_candidates = [(float(price), last_ts) for price in fallback_resistances]
 
-    # Use structure_first mode to prioritize necklines over proximity
-    supports = _rank_levels(support_candidates, last_close, levels, sort_desc=False, mode="structure_first")
-    resistances = _rank_levels(resistance_candidates, last_close, levels, sort_desc=True, mode="structure_first")
+    tolerance = atr if atr is not None else 0.0
+
+    merged_supports = _merge_candidates_by_atr(
+        support_candidates, tolerance, is_support=True
+    )
+    merged_resistances = _merge_candidates_by_atr(
+        resistance_candidates, tolerance, is_support=False
+    )
+
+    supports = _rank_levels(
+        merged_supports, last_close, levels, sort_desc=False, mode="structure_first"
+    )
+
+    min_resistance_price = last_close
+    if supports:
+        min_resistance_price = max(min_resistance_price, max(supports))
+
+    resistances = _rank_levels(
+        merged_resistances,
+        last_close,
+        levels,
+        sort_desc=True,
+        mode="structure_first",
+        min_price=min_resistance_price,
+    )
+
+    if not supports or not resistances:
+        fallback_supports, fallback_resistances = _fallback_extremes(window, levels)
+        if not supports:
+            supports = fallback_supports
+        if not resistances:
+            resistances = fallback_resistances
+
     return supports, resistances
 
 
 def _compute_daily_reversals(
-    df: pd.DataFrame, ts_col: str, levels: int, last_close: float
+    df: pd.DataFrame, ts_col: str, levels: int, last_close: float, atr: Optional[float] = None
 ) -> Tuple[List[float], List[float]]:
     """
     Detect daily support/resistance with three-candle reversal confirmation.
 
     Algorithm:
         1. Analyze last ~30-60 business days (60 bars for 1d interval)
-        2. Filter to levels within ±0.5% of current price
-        3. High followed by 3 consecutive bearish candles → resistance
-        4. Low followed by 3 consecutive bullish candles → support
-        5. Prioritize oldest/deepest reversals (structural importance)
+        2. High followed by 3 consecutive bearish candles → resistance candidate
+        3. Low followed by 3 consecutive bullish candles → support candidate
+        4. Filter resistances to >= last_close, supports to <= last_close
+        5. Optionally filter by guardrail distance (ATR * 5) if ATR available
+        6. Prioritize oldest/deepest reversals (structural importance)
 
     Args:
         df: OHLC DataFrame with datetime column
@@ -449,7 +712,6 @@ def _compute_daily_reversals(
         May return fewer than 'levels' if only limited qualified candidates exist
     """
     window = df.tail(DAILY_LOOKBACK_BARS).copy()
-    tolerance = last_close * DAILY_PRICE_TOLERANCE_RATE
 
     support_candidates: List[Tuple[float, pd.Timestamp]] = []
     resistance_candidates: List[Tuple[float, pd.Timestamp]] = []
@@ -471,21 +733,33 @@ def _compute_daily_reversals(
         low_price = float(current_row["low"])
         timestamp = pd.Timestamp(current_row[ts_col])
 
-        # Resistance: high within tolerance, followed by bearish reversal
-        if (
-            abs(high_price - last_close) <= tolerance
-            and is_bearish_follow_through
-        ):
+        if is_bearish_follow_through:
             resistance_candidates.append((high_price, timestamp))
 
-        # Support: low within tolerance, followed by bullish reversal
-        if (
-            abs(low_price - last_close) <= tolerance
-            and is_bullish_follow_through
-        ):
+        if is_bullish_follow_through:
             support_candidates.append((low_price, timestamp))
 
-    # Use structure_first mode to prioritize oldest/most structural reversals
+    guardrail_distance = atr * 5 if atr is not None else None
+    if guardrail_distance is not None:
+        support_candidates = [
+            (price, ts)
+            for price, ts in support_candidates
+            if abs(price - last_close) <= guardrail_distance
+        ]
+        resistance_candidates = [
+            (price, ts)
+            for price, ts in resistance_candidates
+            if abs(price - last_close) <= guardrail_distance
+        ]
+
+    # Apply price-direction filter: resistances must be >= last_close, supports <= last_close
+    resistance_candidates = [
+        (price, ts) for price, ts in resistance_candidates if price >= last_close
+    ]
+    support_candidates = [
+        (price, ts) for price, ts in support_candidates if price <= last_close
+    ]
+
     supports = _rank_levels(
         support_candidates, last_close, levels, sort_desc=False, mode="structure_first"
     )
@@ -497,8 +771,6 @@ def _compute_daily_reversals(
         mode="structure_first",
     )
 
-    # Fallback to simple extremes within lookback window if no qualified levels found
-    # This ensures daily levels are always within the 60-bar window, not the full DataFrame
     if not supports:
         supports, _ = _fallback_extremes(window, levels)
     if not resistances:
@@ -507,7 +779,12 @@ def _compute_daily_reversals(
     return supports, resistances
 
 
-def compute_support_resistance(df: pd.DataFrame, interval: str, levels: int = 2) -> Tuple[List[float], List[float]]:
+def compute_support_resistance(
+    df: pd.DataFrame,
+    interval: str,
+    levels: int = 2,
+    atr_value: Optional[float] = None,
+) -> Tuple[List[float], List[float]]:
     """
     Detect support/resistance levels using interval-specific algorithms.
 
@@ -561,14 +838,21 @@ def compute_support_resistance(df: pd.DataFrame, interval: str, levels: int = 2)
         return [], []
 
     last_close = float(working["close"].iloc[-1])
+    atr_for_levels = atr_value if atr_value is not None else compute_atr(working)
 
     interval_key = interval.lower()
     if interval_key == "1h":
-        supports, resistances = _compute_intraday_reversals(working, ts_col, levels, last_close)
+        supports, resistances = _compute_intraday_reversals(
+            working, ts_col, levels, last_close, atr=atr_for_levels
+        )
     elif interval_key == "4h":
-        supports, resistances = _compute_four_hour_levels(working, ts_col, levels, last_close)
+        supports, resistances = _compute_four_hour_levels(
+            working, ts_col, levels, last_close, atr=atr_for_levels
+        )
     elif interval_key == "1d":
-        supports, resistances = _compute_daily_reversals(working, ts_col, levels, last_close)
+        supports, resistances = _compute_daily_reversals(
+            working, ts_col, levels, last_close, atr=atr_for_levels
+        )
     else:
         supports, resistances = _fallback_extremes(working, levels)
 
@@ -663,13 +947,112 @@ def compute_average_volatility(df: pd.DataFrame) -> Optional[float]:
     return round(float(volatility), 4)
 
 
+def _support_follow_through(idx: int, closes: pd.Series, ema_vals: pd.Series) -> bool:
+    """Validate follow-through for support_bounce pattern."""
+    n = len(closes)
+    end_idx = min(idx + 2, n - 1)
+    for j in range(idx, end_idx + 1):
+        if closes.iloc[j] < ema_vals.iloc[j]:
+            return False
+
+    if idx + 2 <= n - 1:
+        return closes.iloc[idx + 2] > closes.iloc[idx]
+    if idx + 1 <= n - 1:
+        return closes.iloc[idx + 1] > closes.iloc[idx]
+    return True
+
+
+def _resistance_follow_through(idx: int, closes: pd.Series, ema_vals: pd.Series) -> bool:
+    """Validate follow-through for resistance_reject pattern."""
+    n = len(closes)
+    end_idx = min(idx + 2, n - 1)
+    for j in range(idx, end_idx + 1):
+        if closes.iloc[j] > ema_vals.iloc[j]:
+            return False
+
+    if idx + 2 <= n - 1:
+        return closes.iloc[idx + 2] < closes.iloc[idx]
+    if idx + 1 <= n - 1:
+        return closes.iloc[idx + 1] < closes.iloc[idx]
+    return True
+
+
+def _detect_single_ema_reaction(
+    df: pd.DataFrame, ema_series: pd.Series, reaction_window: int
+) -> Tuple[str, Optional[int]]:
+    """Detect latest EMA reaction within the given window."""
+    window_df = df.tail(reaction_window).copy()
+    ema_window = ema_series.tail(window_df.shape[0])
+
+    if window_df.empty or ema_window.empty:
+        return "none", None
+
+    closes = window_df["close"].reset_index(drop=True)
+    highs = window_df["high"].reset_index(drop=True)
+    lows = window_df["low"].reset_index(drop=True)
+    ema_vals = ema_window.reset_index(drop=True)
+
+    n = len(window_df)
+    support_idx: Optional[int] = None
+    resistance_idx: Optional[int] = None
+
+    for idx in range(n - 1, -1, -1):
+        if support_idx is None and lows.iloc[idx] < ema_vals.iloc[idx] and closes.iloc[idx] > ema_vals.iloc[idx]:
+            if _support_follow_through(idx, closes, ema_vals):
+                support_idx = idx
+
+        if resistance_idx is None and highs.iloc[idx] > ema_vals.iloc[idx] and closes.iloc[idx] < ema_vals.iloc[idx]:
+            if _resistance_follow_through(idx, closes, ema_vals):
+                resistance_idx = idx
+
+        if support_idx is not None and resistance_idx is not None:
+            break
+
+    def _bars_ago(index: int) -> int:
+        return (n - 1) - index
+
+    if support_idx is not None and resistance_idx is not None:
+        if _bars_ago(support_idx) <= _bars_ago(resistance_idx):
+            return "support_bounce", _bars_ago(support_idx)
+        return "resistance_reject", _bars_ago(resistance_idx)
+
+    if support_idx is not None:
+        return "support_bounce", _bars_ago(support_idx)
+    if resistance_idx is not None:
+        return "resistance_reject", _bars_ago(resistance_idx)
+
+    return "none", None
+
+
+def compute_ema_features(df: pd.DataFrame, interval: str) -> dict:
+    """Compute EMA latest values and reaction metadata per EMA period."""
+    reaction_window = EMA_REACTION_WINDOWS.get(interval.lower(), len(df))
+    closes = df["close"].dropna()
+
+    features: dict = {}
+
+    for period in EMA_PERIODS:
+        ema_series = closes.ewm(span=period, adjust=False, min_periods=period).mean()
+        latest_val = ema_series.dropna().iloc[-1] if not ema_series.dropna().empty else None
+        reaction, bars_ago = _detect_single_ema_reaction(df, ema_series, reaction_window)
+        features[str(period)] = {
+            "latest": _safe_round(latest_val, 4),
+            "reaction": reaction,
+            "reaction_bars_ago": int(bars_ago) if bars_ago is not None else None,
+        }
+
+    return features
+
+
 def analyze_dataframe(df: pd.DataFrame, pair: str, interval: str, period: str) -> AnalysisResult:
     """Compute all analytics for a single OHLC dataframe."""
     trend = detect_trend(df["close"])
-    support_levels, resistance_levels = compute_support_resistance(df, interval)
-    rsi = compute_rsi(df["close"])
     atr = compute_atr(df)
+    support_levels, resistance_levels = compute_support_resistance(df, interval, atr_value=atr)
+    rsi = compute_rsi(df["close"])
     avg_volatility = compute_average_volatility(df)
+    sma = compute_sma_features(df["close"])
+    ema = compute_ema_features(df, interval)
 
     return AnalysisResult(
         pair=pair,
@@ -682,6 +1065,9 @@ def analyze_dataframe(df: pd.DataFrame, pair: str, interval: str, period: str) -
         atr=atr,
         average_volatility=avg_volatility,
         generated_at=get_jst_now().isoformat(),
+        sma=sma,
+        ema=ema,
+        timeframe=interval,
     )
 
 

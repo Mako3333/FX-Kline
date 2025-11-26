@@ -13,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import yfinance as yf
 
-def test_symbol(symbol: str, interval: str, period: str) -> dict:
+
+def run_symbol_test(symbol: str, interval: str, period: str) -> dict:
     """
     Test a specific symbol with given interval and period
     
@@ -65,7 +66,8 @@ def test_symbol(symbol: str, interval: str, period: str) -> dict:
         if 'Close' in df.columns:
             result["sample_close"] = float(df['Close'].iloc[-1])
         
-        print(f"✅ SUCCESS ({len(df)} rows, last close: ${result['sample_close']:.2f})")
+        close_str = f"${result['sample_close']:.2f}" if result['sample_close'] is not None else "N/A"
+        print(f"✅ SUCCESS ({len(df)} rows, last close: {close_str})")
         
     except Exception as e:
         result["error"] = str(e)
@@ -101,7 +103,7 @@ def main():
         symbol_results = []
         
         for interval, period in test_cases:
-            result = test_symbol(symbol, interval, period)
+            result = run_symbol_test(symbol, interval, period)
             symbol_results.append(result)
             all_results.append(result)
         

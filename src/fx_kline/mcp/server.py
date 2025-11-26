@@ -617,131 +617,141 @@ async def handle_call_tool(
         ]
 
 
-@server.set_completions()
-async def handle_completions(
-    ref: types.CompletionRef,
-) -> list[types.Completion]:
-    """
-    Provide argument completion suggestions for tools.
+if hasattr(server, "set_completions"):
+    # Newer MCP server versions expose `set_completions`; register handler when available.
+    @server.set_completions()
+    async def handle_completions(  # type: ignore[no-redef]
+        ref: types.CompletionRef,
+    ) -> list[types.Completion]:
+        """
+        Provide argument completion suggestions for tools.
 
-    Args:
-        ref: Completion reference containing tool name and argument name
+        Args:
+            ref: Completion reference containing tool name and argument name
 
-    Returns:
-        List of completion suggestions
-    """
-    # Completion for 'pair' parameter (all data fetching tools)
-    if ref.argument == "pair":
-        pairs = get_supported_pairs()
-        return [
-            types.Completion(
-                value=pair_code,
-                label=f"{pair_code} - {description}",
-                description=description
-            )
-            for pair_code, description in pairs.items()
-        ]
+        Returns:
+            List of completion suggestions
+        """
+        # Completion for 'pair' parameter (all data fetching tools)
+        if ref.argument == "pair":
+            pairs = get_supported_pairs()
+            return [
+                types.Completion(
+                    value=pair_code,
+                    label=f"{pair_code} - {description}",
+                    description=description
+                )
+                for pair_code, description in pairs.items()
+            ]
 
-    # Completion for 'interval' parameter
-    if ref.argument == "interval":
-        # Tool-specific interval suggestions
-        if ref.name == "get_intraday_ohlc":
-            # Only intraday intervals (1m-4h)
-            intervals = sorted(INTRADAY_INTERVALS)
-            descriptions = {
-                "1m": "1 minute - Ultra short-term scalping",
-                "5m": "5 minutes - Short-term scalping",
-                "15m": "15 minutes - Scalping/Day trading",
-                "30m": "30 minutes - Day trading",
-                "1h": "1 hour - Day trading (recommended)",
-                "4h": "4 hours - Swing day trading",
-            }
-        elif ref.name == "get_daily_ohlc":
-            # Only daily+ intervals (1d, 1wk, 1mo)
-            intervals = sorted(DAILY_INTERVALS)
-            descriptions = {
-                "1d": "1 day - Daily analysis (recommended)",
-                "1wk": "1 week - Weekly trends",
-                "1mo": "1 month - Monthly trends",
-            }
-        else:
-            # All intervals for deprecated/batch tools
-            timeframes = get_supported_timeframes()
+        # Completion for 'interval' parameter
+        if ref.argument == "interval":
+            # Tool-specific interval suggestions
+            if ref.name == "get_intraday_ohlc":
+                # Only intraday intervals (1m-4h)
+                intervals = sorted(INTRADAY_INTERVALS)
+                descriptions = {
+                    "1m": "1 minute - Ultra short-term scalping",
+                    "5m": "5 minutes - Short-term scalping",
+                    "15m": "15 minutes - Scalping/Day trading",
+                    "30m": "30 minutes - Day trading",
+                    "1h": "1 hour - Day trading (recommended)",
+                    "4h": "4 hours - Swing day trading",
+                }
+            elif ref.name == "get_daily_ohlc":
+                # Only daily+ intervals (1d, 1wk, 1mo)
+                intervals = sorted(DAILY_INTERVALS)
+                descriptions = {
+                    "1d": "1 day - Daily analysis (recommended)",
+                    "1wk": "1 week - Weekly trends",
+                    "1mo": "1 month - Monthly trends",
+                }
+            else:
+                # All intervals for deprecated/batch tools
+                timeframes = get_supported_timeframes()
+                return [
+                    types.Completion(
+                        value=interval,
+                        label=f"{interval} - {description}",
+                        description=description
+                    )
+                    for interval, description in timeframes.items()
+                ]
+
             return [
                 types.Completion(
                     value=interval,
-                    label=f"{interval} - {description}",
-                    description=description
+                    label=f"{interval} - {descriptions.get(interval, interval)}",
+                    description=descriptions.get(interval, interval)
                 )
-                for interval, description in timeframes.items()
+                for interval in intervals
             ]
 
-        return [
-            types.Completion(
-                value=interval,
-                label=f"{interval} - {descriptions.get(interval, interval)}",
-                description=descriptions.get(interval, interval)
-            )
-            for interval in intervals
-        ]
+        # Completion for 'period' parameter
+        if ref.argument == "period":
+            # Common period values with descriptions
+            period_suggestions = [
+                ("1d", "1 day - Very short term"),
+                ("5d", "5 days - Short term"),
+                ("30d", "30 days - Medium term (recommended)"),
+                ("3mo", "3 months - Quarterly"),
+                ("6mo", "6 months - Semi-annual"),
+                ("1y", "1 year - Annual"),
+                ("2y", "2 years - Long term"),
+                ("5y", "5 years - Very long term"),
+                ("ytd", "Year to date"),
+                ("max", "Maximum available data"),
+            ]
 
-    # Completion for 'period' parameter
-    if ref.argument == "period":
-        # Common period values with descriptions
-        period_suggestions = [
-            ("1d", "1 day - Very short term"),
-            ("5d", "5 days - Short term"),
-            ("30d", "30 days - Medium term (recommended)"),
-            ("3mo", "3 months - Quarterly"),
-            ("6mo", "6 months - Semi-annual"),
-            ("1y", "1 year - Annual"),
-            ("2y", "2 years - Long term"),
-            ("5y", "5 years - Very long term"),
-            ("ytd", "Year to date"),
-            ("max", "Maximum available data"),
-        ]
+            return [
+                types.Completion(
+                    value=period,
+                    label=f"{period} - {description}",
+                    description=description
+                )
+                for period, description in period_suggestions
+            ]
 
-        return [
-            types.Completion(
-                value=period,
-                label=f"{period} - {description}",
-                description=description
-            )
-            for period, description in period_suggestions
-        ]
+        # Completion for 'preset_only' parameter
+        if ref.argument == "preset_only":
+            return [
+                types.Completion(
+                    value=False,
+                    label="false - All available (default)",
+                    description="Return all supported pairs/timeframes"
+                ),
+                types.Completion(
+                    value=True,
+                    label="true - Preset only",
+                    description="Return only preset pairs/timeframes for UI"
+                ),
+            ]
 
-    # Completion for 'preset_only' parameter
-    if ref.argument == "preset_only":
-        return [
-            types.Completion(
-                value=False,
-                label="false - All available (default)",
-                description="Return all supported pairs/timeframes"
-            ),
-            types.Completion(
-                value=True,
-                label="true - Preset only",
-                description="Return only preset pairs/timeframes for UI"
-            ),
-        ]
+        # Completion for 'exclude_weekends' parameter
+        if ref.argument == "exclude_weekends":
+            return [
+                types.Completion(
+                    value=True,
+                    label="true - Exclude weekends (default)",
+                    description="Filter out weekend data for cleaner analysis"
+                ),
+                types.Completion(
+                    value=False,
+                    label="false - Include weekends",
+                    description="Include all data including weekends"
+                ),
+            ]
 
-    # Completion for 'exclude_weekends' parameter
-    if ref.argument == "exclude_weekends":
-        return [
-            types.Completion(
-                value=True,
-                label="true - Exclude weekends (default)",
-                description="Filter out weekend data for cleaner analysis"
-            ),
-            types.Completion(
-                value=False,
-                label="false - Include weekends",
-                description="Include all data including weekends"
-            ),
-        ]
-
-    # No completions for other parameters
-    return []
+        # No completions for other parameters
+        return []
+else:
+    # Fallback for MCP server versions without completion registration API.
+    # This keeps the module importable (for tests and tools) even if completions
+    # are not supported by the underlying library.
+    async def handle_completions(  # type: ignore[no-redef]
+        ref: types.CompletionRef,
+    ) -> list[types.Completion]:
+        return []
 
 
 async def main():
