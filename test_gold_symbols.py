@@ -13,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import yfinance as yf
 
-def test_symbol(symbol: str, interval: str, period: str) -> dict:
+
+def run_symbol_test(symbol: str, interval: str, period: str) -> dict:
     """
     Test a specific symbol with given interval and period
     
@@ -101,7 +102,7 @@ def main():
         symbol_results = []
         
         for interval, period in test_cases:
-            result = test_symbol(symbol, interval, period)
+            result = run_symbol_test(symbol, interval, period)
             symbol_results.append(result)
             all_results.append(result)
         

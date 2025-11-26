@@ -19,10 +19,11 @@ def temp_reports_dir(tmp_path):
 
 @pytest.fixture
 def sample_analysis_data():
-    """Sample analysis data matching schema_version=1."""
+    """Sample analysis data matching schema_version=2."""
     return {
         "pair": "USDJPY",
         "interval": "1h",
+        "timeframe": "1h",
         "period": "10d",
         "trend": "UP",
         "support_levels": [149.85, 149.92],
@@ -30,8 +31,20 @@ def sample_analysis_data():
         "rsi": 62.45,
         "atr": 0.3245,
         "average_volatility": 0.2812,
+        "sma": {
+            "5": {"latest": 150.0, "slope": "up", "deviation": 0.001},
+            "13": {"latest": 149.5, "slope": "up"},
+            "21": {"latest": 149.0, "slope": "flat"},
+            "ordering": "bullish",
+        },
+        "ema": {
+            "25": {"latest": 149.8, "reaction": "none", "reaction_bars_ago": None},
+            "75": {"latest": 148.5, "reaction": "support_bounce", "reaction_bars_ago": 4},
+            "90": {"latest": 148.0, "reaction": "none", "reaction_bars_ago": None},
+            "200": {"latest": 147.0, "reaction": "none", "reaction_bars_ago": None},
+        },
         "generated_at": "2025-11-25T08:00:00+09:00",
-        "schema_version": 1,
+        "schema_version": 2,
     }
 
 
@@ -47,7 +60,13 @@ def test_discover_analysis_files_groups_by_pair(temp_reports_dir, sample_analysi
     """Test that analysis files are correctly grouped by currency pair."""
     # Create multiple files for different pairs and intervals
     create_analysis_file(temp_reports_dir, "USDJPY", "1h", "10d", sample_analysis_data)
-    create_analysis_file(temp_reports_dir, "USDJPY", "4h", "35d", {**sample_analysis_data, "interval": "4h"})
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "4h",
+        "35d",
+        {**sample_analysis_data, "interval": "4h", "timeframe": "4h"},
+    )
     create_analysis_file(temp_reports_dir, "EURUSD", "1h", "10d", {**sample_analysis_data, "pair": "EURUSD"})
 
     grouped = sc.discover_analysis_files(temp_reports_dir)
@@ -93,12 +112,15 @@ def test_load_analysis_file_valid(temp_reports_dir, sample_analysis_data):
     assert tf_analysis.rsi == 62.45
     assert tf_analysis.atr == 0.3245
     assert tf_analysis.average_volatility == 0.2812
+    assert tf_analysis.sma is not None
+    assert tf_analysis.ema is not None
+    assert tf_analysis.timeframe == "1h"
     assert tf_analysis.data_timestamp == "2025-11-25T08:00:00+09:00"
 
 
 def test_load_analysis_file_invalid_schema_version(temp_reports_dir, sample_analysis_data):
     """Test that files with wrong schema_version are rejected."""
-    invalid_data = {**sample_analysis_data, "schema_version": 2}
+    invalid_data = {**sample_analysis_data, "schema_version": 99}
     file_path = create_analysis_file(temp_reports_dir, "USDJPY", "1h", "10d", invalid_data)
 
     tf_analysis = sc.load_analysis_file(file_path)
@@ -146,8 +168,20 @@ def test_consolidate_pair_analyses_complete_data(mock_jst_now, temp_reports_dir,
 
     # Create all three timeframes
     create_analysis_file(temp_reports_dir, "USDJPY", "1h", "10d", sample_analysis_data)
-    create_analysis_file(temp_reports_dir, "USDJPY", "4h", "35d", {**sample_analysis_data, "interval": "4h", "period": "35d"})
-    create_analysis_file(temp_reports_dir, "USDJPY", "1d", "200d", {**sample_analysis_data, "interval": "1d", "period": "200d"})
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "4h",
+        "35d",
+        {**sample_analysis_data, "interval": "4h", "period": "35d", "timeframe": "4h"},
+    )
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "1d",
+        "200d",
+        {**sample_analysis_data, "interval": "1d", "period": "200d", "timeframe": "1d"},
+    )
 
     analysis_files = list(temp_reports_dir.glob("USDJPY_*_analysis.json"))
     summary = sc.consolidate_pair_analyses("USDJPY", analysis_files)
@@ -162,7 +196,7 @@ def test_consolidate_pair_analyses_complete_data(mock_jst_now, temp_reports_dir,
     assert summary.metadata["total_timeframes"] == 3
     assert summary.metadata["missing_timeframes"] == []
     assert len(summary.metadata["source_files"]) == 3
-    assert summary.metadata["consolidation_version"] == "1.0.0"
+    assert summary.metadata["consolidation_version"] == "1.1.0"
 
 
 @patch('fx_kline.core.summary_consolidator.get_jst_now')
@@ -172,7 +206,13 @@ def test_consolidate_pair_analyses_partial_data(mock_jst_now, temp_reports_dir, 
 
     # Create only 1h and 4h (missing 1d)
     create_analysis_file(temp_reports_dir, "USDJPY", "1h", "10d", sample_analysis_data)
-    create_analysis_file(temp_reports_dir, "USDJPY", "4h", "35d", {**sample_analysis_data, "interval": "4h", "period": "35d"})
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "4h",
+        "35d",
+        {**sample_analysis_data, "interval": "4h", "period": "35d", "timeframe": "4h"},
+    )
 
     analysis_files = list(temp_reports_dir.glob("USDJPY_*_analysis.json"))
     summary = sc.consolidate_pair_analyses("USDJPY", analysis_files)
@@ -193,8 +233,20 @@ def test_consolidate_pair_analyses_timeframe_ordering(mock_jst_now, temp_reports
 
     # Create files in random order
     create_analysis_file(temp_reports_dir, "USDJPY", "1h", "10d", sample_analysis_data)
-    create_analysis_file(temp_reports_dir, "USDJPY", "1d", "200d", {**sample_analysis_data, "interval": "1d", "period": "200d"})
-    create_analysis_file(temp_reports_dir, "USDJPY", "4h", "35d", {**sample_analysis_data, "interval": "4h", "period": "35d"})
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "1d",
+        "200d",
+        {**sample_analysis_data, "interval": "1d", "period": "200d", "timeframe": "1d"},
+    )
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "4h",
+        "35d",
+        {**sample_analysis_data, "interval": "4h", "period": "35d", "timeframe": "4h"},
+    )
 
     analysis_files = list(temp_reports_dir.glob("USDJPY_*_analysis.json"))
     summary = sc.consolidate_pair_analyses("USDJPY", analysis_files)
@@ -255,7 +307,7 @@ def test_consolidated_summary_to_dict_metadata_immutability():
         "source_files": ["USDJPY_1h_10d_analysis.json"],
         "total_timeframes": 1,
         "missing_timeframes": ["4h"],
-        "consolidation_version": "1.0.0",
+        "consolidation_version": "1.1.0",
     }
 
     summary = sc.ConsolidatedSummary(
@@ -328,7 +380,13 @@ def test_consolidate_reports_batch(mock_jst_now, temp_reports_dir, sample_analys
 
     # Create files for two pairs
     create_analysis_file(temp_reports_dir, "USDJPY", "1h", "10d", sample_analysis_data)
-    create_analysis_file(temp_reports_dir, "USDJPY", "4h", "35d", {**sample_analysis_data, "interval": "4h"})
+    create_analysis_file(
+        temp_reports_dir,
+        "USDJPY",
+        "4h",
+        "35d",
+        {**sample_analysis_data, "interval": "4h", "timeframe": "4h"},
+    )
     create_analysis_file(temp_reports_dir, "EURUSD", "1h", "10d", {**sample_analysis_data, "pair": "EURUSD"})
 
     output_dir = tmp_path / "summary_reports"
