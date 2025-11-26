@@ -308,10 +308,10 @@ def _rank_levels(
     if max_price is not None:
         filtered = [(p, ts) for p, ts in filtered if p <= max_price]
 
-    # Fallback: if filtering removes all candidates, use unfiltered top result
-    # This ensures we always return at least something when candidates exist
+    # Fallback: if filtering removes all candidates, return empty
+    # so the caller can decide whether to fallback to simple extremes
     if not filtered and unique:
-        filtered = unique[:1]
+        return []
 
     # Sort based on mode
     if mode == "structure_first":
