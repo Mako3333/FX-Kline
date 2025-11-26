@@ -1,0 +1,68 @@
+{
+  "pair": "GBPJPY",
+  "schema_version": 2,
+  "generated_at": "2025-11-26T09:13:19.534641+09:00",
+  "timeframes": {
+    "1d": {
+      "interval": "1d",
+      "period": "200d",
+      "trend": "UP",
+      "support_levels": [
+        184.417,
+        186.032
+      ],
+      "resistance_levels": [
+        206.838,
+        206.031
+      ],
+      "rsi": 63.99,
+      "atr": 1.3026,
+      "average_volatility": 1.3254,
+      "data_timestamp": "2025-11-26T09:13:18.724249+09:00"
+    },
+    "4h": {
+      "interval": "4h",
+      "period": "35d",
+      "trend": "UP",
+      "support_levels": [
+        199.059,
+        199.747
+      ],
+      "resistance_levels": [
+        206.858,
+        206.487
+      ],
+      "rsi": 55.82,
+      "atr": 0.4172,
+      "average_volatility": 0.57,
+      "data_timestamp": "2025-11-26T09:13:18.741647+09:00"
+    },
+    "1h": {
+      "interval": "1h",
+      "period": "10d",
+      "trend": "UP",
+      "support_levels": [
+        202.657,
+        202.807
+      ],
+      "resistance_levels": [
+        206.858,
+        206.811
+      ],
+      "rsi": 52.14,
+      "atr": 0.3151,
+      "average_volatility": 0.2969,
+      "data_timestamp": "2025-11-26T09:13:18.733064+09:00"
+    }
+  },
+  "metadata": {
+    "source_files": [
+      "GBPJPY_1d_200d_analysis.json",
+      "GBPJPY_1h_10d_analysis.json",
+      "GBPJPY_4h_35d_analysis.json"
+    ],
+    "consolidation_version": "1.0.0",
+    "total_timeframes": 3,
+    "missing_timeframes": []
+  }
+}
