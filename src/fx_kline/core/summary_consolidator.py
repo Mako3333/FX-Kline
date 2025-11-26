@@ -8,6 +8,7 @@ and produces consolidated summary JSON files (schema_version=2) in summary_repor
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import re
@@ -56,7 +57,7 @@ class ConsolidatedSummary:
             "schema_version": self.schema_version,
             "generated_at": self.generated_at,
             "timeframes": {},
-            "metadata": self.metadata,
+            "metadata": copy.deepcopy(self.metadata),
         }
 
         # Convert TimeframeAnalysis objects in timeframes dict

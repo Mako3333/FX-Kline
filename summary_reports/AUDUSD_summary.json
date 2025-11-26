@@ -1,0 +1,68 @@
+{
+  "pair": "AUDUSD",
+  "schema_version": 2,
+  "generated_at": "2025-11-26T09:13:19.534090+09:00",
+  "timeframes": {
+    "1d": {
+      "interval": "1d",
+      "period": "200d",
+      "trend": "UP",
+      "support_levels": [
+        0.5923,
+        0.5959
+      ],
+      "resistance_levels": [
+        0.6692,
+        0.6678
+      ],
+      "rsi": 42.51,
+      "atr": 0.0044,
+      "average_volatility": 0.0051,
+      "data_timestamp": "2025-11-26T09:13:18.668871+09:00"
+    },
+    "4h": {
+      "interval": "4h",
+      "period": "35d",
+      "trend": "DOWN",
+      "support_levels": [
+        0.6424,
+        0.6425
+      ],
+      "resistance_levels": [
+        0.6619,
+        0.6618
+      ],
+      "rsi": 53.12,
+      "atr": 0.0014,
+      "average_volatility": 0.0018,
+      "data_timestamp": "2025-11-26T09:13:18.687364+09:00"
+    },
+    "1h": {
+      "interval": "1h",
+      "period": "10d",
+      "trend": "DOWN",
+      "support_levels": [
+        0.6424,
+        0.6425
+      ],
+      "resistance_levels": [
+        0.6553,
+        0.6549
+      ],
+      "rsi": 58.51,
+      "atr": 0.001,
+      "average_volatility": 0.0009,
+      "data_timestamp": "2025-11-26T09:13:18.678273+09:00"
+    }
+  },
+  "metadata": {
+    "source_files": [
+      "AUDUSD_1d_200d_analysis.json",
+      "AUDUSD_1h_10d_analysis.json",
+      "AUDUSD_4h_35d_analysis.json"
+    ],
+    "consolidation_version": "1.0.0",
+    "total_timeframes": 3,
+    "missing_timeframes": []
+  }
+}

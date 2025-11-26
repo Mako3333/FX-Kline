@@ -31,6 +31,15 @@ _FILENAME_PATTERN = re.compile(
 )
 _TREND_THRESHOLD = 0.002  # ~0.2% drift threshold before calling UP/DOWN
 
+# Support/Resistance detection constants
+INTRADAY_LOOKBACK_BARS = 240  # ~10 business days for 1h interval
+FOUR_HOUR_LOOKBACK_BARS = 84  # ~2 weeks for 4h interval (14 days * 6 bars/day)
+DAILY_LOOKBACK_BARS = 60  # ~30-60 business days for 1d interval
+
+INTRADAY_REVERSAL_HOURS = 5  # Hours to confirm reversal
+DAILY_REVERSAL_CANDLES = 3  # Consecutive candles for reversal
+DAILY_PRICE_TOLERANCE_RATE = 0.005  # 0.5% tolerance for 1d levels (percentage-based)
+
 logger = logging.getLogger(__name__)
 
 
@@ -128,15 +137,353 @@ def detect_trend(closes: pd.Series) -> str:
     return "SIDEWAYS"
 
 
-def compute_support_resistance(df: pd.DataFrame, levels: int = 2) -> Tuple[List[float], List[float]]:
-    """Pick the N lowest lows and highest highs as support/resistance."""
+def _get_time_column(df: pd.DataFrame) -> str:
+    if "datetime" in df.columns:
+        return "datetime"
+    if "timestamp" in df.columns:
+        return "timestamp"
+    raise ValueError("DataFrame must include a 'datetime' or 'timestamp' column")
+
+
+def _rank_levels(
+    candidates: List[Tuple[float, pd.Timestamp]],
+    last_close: float,
+    max_levels: int,
+    *,
+    sort_desc: bool,
+    mode: str = "distance",
+) -> List[float]:
+    """
+    Pick levels based on priority mode.
+
+    Args:
+        candidates: List of (price, timestamp) tuples
+        last_close: Current price for proximity ranking
+        max_levels: Maximum number of levels to return
+        sort_desc: If True, sort output descending (for resistances)
+        mode: "distance" (prioritize proximity to current price) or
+              "structure_first" (prioritize structural/historical importance)
+
+    Returns:
+        List of selected price levels, sorted for readability
+    """
+    if not candidates:
+        return []
+
+    # Deduplicate candidates
+    seen = set()
+    unique: List[Tuple[float, pd.Timestamp]] = []
+    for price, ts in candidates:
+        rounded = round(float(price), 4)
+        key = f"{rounded:.4f}"
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append((rounded, pd.Timestamp(ts)))
+
+    # Sort based on mode
+    if mode == "structure_first":
+        # Structure priority: older levels first (necklines), then proximity
+        ranked = sorted(unique, key=lambda item: (item[1].timestamp(), abs(item[0] - last_close)))
+    else:  # mode == "distance"
+        # Distance priority: closest to current price first, then recency
+        ranked = sorted(unique, key=lambda item: (abs(item[0] - last_close), -item[1].timestamp()))
+
+    selected = [price for price, _ in ranked[:max_levels]]
+    return sorted(selected, reverse=sort_desc)
+
+
+def _fallback_extremes(df: pd.DataFrame, levels: int) -> Tuple[List[float], List[float]]:
+    """
+    Fallback method to extract simple extremes when no reversal patterns detected.
+
+    This is used when interval-specific algorithms fail to find qualified levels,
+    or when the interval is not recognized. Returns the N lowest lows and N highest
+    highs from the provided DataFrame.
+
+    Args:
+        df: OHLC DataFrame
+        levels: Number of extreme levels to extract per side
+
+    Returns:
+        Tuple of (support_levels, resistance_levels)
+    """
     lows = df["low"].dropna()
     highs = df["high"].dropna()
+    supports = sorted(lows.nsmallest(levels).round(4).tolist())
+    resistances = sorted(highs.nlargest(levels).round(4).tolist(), reverse=True)
+    return supports, resistances
 
-    support_levels = sorted(lows.nsmallest(levels).round(4).tolist())
-    resistance_levels = sorted(highs.nlargest(levels).round(4).tolist(), reverse=True)
 
-    return support_levels, resistance_levels
+def _compute_intraday_reversals(
+    df: pd.DataFrame, ts_col: str, levels: int, last_close: float
+) -> Tuple[List[float], List[float]]:
+    """
+    Detect intraday support/resistance for 1-hour timeframe.
+
+    Algorithm:
+        1. Analyze last ~10 business days (240 bars for 1h interval)
+        2. Group bars by session date
+        3. Identify each day's high and low
+        4. Confirm reversal if price doesn't return for 5+ hours after high/low
+
+    Args:
+        df: OHLC DataFrame with datetime column
+        ts_col: Name of the timestamp column
+        levels: Maximum number of levels to return per side
+        last_close: Current price for proximity ranking
+
+    Returns:
+        Tuple of (support_levels, resistance_levels)
+    """
+    window = df.tail(INTRADAY_LOOKBACK_BARS).copy()
+    window["session_date"] = window[ts_col].dt.date
+
+    support_candidates: List[Tuple[float, pd.Timestamp]] = []
+    resistance_candidates: List[Tuple[float, pd.Timestamp]] = []
+
+    for session_date in sorted(window["session_date"].unique(), reverse=True):
+        daily = window[window["session_date"] == session_date]
+        if daily.empty:
+            continue
+
+        high_idx = daily["high"].idxmax()
+        low_idx = daily["low"].idxmin()
+
+        high_time = window.loc[high_idx, ts_col]
+        low_time = window.loc[low_idx, ts_col]
+
+        day_high = float(window.loc[high_idx, "high"])
+        day_low = float(window.loc[low_idx, "low"])
+
+        # Check if high was not revisited in the next 5 hours
+        post_high = window[window[ts_col] > high_time].head(INTRADAY_REVERSAL_HOURS)
+        if post_high.shape[0] >= INTRADAY_REVERSAL_HOURS and post_high["high"].max() < day_high:
+            resistance_candidates.append((day_high, pd.Timestamp(high_time)))
+
+        # Check if low was not revisited in the next 5 hours
+        post_low = window[window[ts_col] > low_time].head(INTRADAY_REVERSAL_HOURS)
+        if post_low.shape[0] >= INTRADAY_REVERSAL_HOURS and post_low["low"].min() > day_low:
+            support_candidates.append((day_low, pd.Timestamp(low_time)))
+
+    supports = _rank_levels(support_candidates, last_close, levels, sort_desc=False)
+    resistances = _rank_levels(resistance_candidates, last_close, levels, sort_desc=True)
+    return supports, resistances
+
+
+def _compute_four_hour_levels(
+    df: pd.DataFrame, ts_col: str, levels: int, last_close: float
+) -> Tuple[List[float], List[float]]:
+    """
+    Detect 4-hour support/resistance using weekly neckline logic.
+
+    Algorithm:
+        1. Analyze last ~2-4 weeks (60 bars for 4h interval)
+        2. Group by week (W-SUN)
+        3. Compare last week vs previous week
+        4. Higher-high breakout → both weeks' highs/lows as candidates
+        5. Lower-low breakdown → both weeks' highs/lows as candidates
+        6. Prioritize structural levels (necklines) over price proximity
+
+    Args:
+        df: OHLC DataFrame with datetime column
+        ts_col: Name of the timestamp column
+        levels: Maximum number of levels to return per side
+        last_close: Current price for proximity ranking
+
+    Returns:
+        Tuple of (support_levels, resistance_levels) sorted for readability
+    """
+    window = df.tail(FOUR_HOUR_LOOKBACK_BARS).copy()
+    # Note: to_period("W-SUN") drops timezone info, but this is acceptable for weekly grouping
+    window["week"] = window[ts_col].dt.to_period("W-SUN")
+
+    weekly = (
+        window.groupby("week")
+        .agg(
+            week_high=("high", "max"),
+            week_low=("low", "min"),
+            week_end=(ts_col, "max"),
+        )
+        .reset_index()
+        .sort_values("week")
+    )
+
+    support_candidates: List[Tuple[float, pd.Timestamp]] = []
+    resistance_candidates: List[Tuple[float, pd.Timestamp]] = []
+
+    if weekly.shape[0] >= 2:
+        last_week = weekly.iloc[-1]
+        prev_week = weekly.iloc[-2]
+
+        # Collect candidates from all weeks for structure-first ranking
+        if last_week.week_high > prev_week.week_high:
+            # Higher-high breakout: collect all weekly lows and highs
+            for _, week_row in weekly.iterrows():
+                support_candidates.append((float(week_row.week_low), pd.Timestamp(week_row.week_end)))
+                resistance_candidates.append((float(week_row.week_high), pd.Timestamp(week_row.week_end)))
+        elif last_week.week_low < prev_week.week_low:
+            # Lower-low breakdown: collect all weekly lows and highs
+            for _, week_row in weekly.iterrows():
+                support_candidates.append((float(week_row.week_low), pd.Timestamp(week_row.week_end)))
+                resistance_candidates.append((float(week_row.week_high), pd.Timestamp(week_row.week_end)))
+
+    # Fallback to simple extremes if no structural levels found
+    if not support_candidates and not resistance_candidates:
+        return _fallback_extremes(window, levels)
+
+    # Use structure_first mode to prioritize necklines over proximity
+    supports = _rank_levels(support_candidates, last_close, levels, sort_desc=False, mode="structure_first")
+    resistances = _rank_levels(resistance_candidates, last_close, levels, sort_desc=True, mode="structure_first")
+    return supports, resistances
+
+
+def _compute_daily_reversals(
+    df: pd.DataFrame, ts_col: str, levels: int, last_close: float
+) -> Tuple[List[float], List[float]]:
+    """
+    Detect daily support/resistance with three-candle reversal confirmation.
+
+    Algorithm:
+        1. Analyze last ~30-60 business days (60 bars for 1d interval)
+        2. Filter to levels within ±0.5% of current price
+        3. High followed by 3 consecutive bearish candles → resistance
+        4. Low followed by 3 consecutive bullish candles → support
+        5. Prioritize oldest/deepest reversals (structural importance)
+
+    Args:
+        df: OHLC DataFrame with datetime column
+        ts_col: Name of the timestamp column
+        levels: Maximum number of levels to return per side
+        last_close: Current price for proximity ranking
+
+    Returns:
+        Tuple of (support_levels, resistance_levels)
+        May return fewer than 'levels' if only limited qualified candidates exist
+    """
+    window = df.tail(DAILY_LOOKBACK_BARS).copy()
+    tolerance = last_close * DAILY_PRICE_TOLERANCE_RATE
+
+    support_candidates: List[Tuple[float, pd.Timestamp]] = []
+    resistance_candidates: List[Tuple[float, pd.Timestamp]] = []
+
+    for idx in range(window.shape[0] - DAILY_REVERSAL_CANDLES):
+        current_row = window.iloc[idx]
+        next_slice = window.iloc[idx + 1 : idx + 1 + DAILY_REVERSAL_CANDLES]
+        if next_slice.shape[0] < DAILY_REVERSAL_CANDLES:
+            break
+
+        is_bearish_follow_through = (
+            next_slice["close"] < next_slice["open"]
+        ).all()
+        is_bullish_follow_through = (
+            next_slice["close"] > next_slice["open"]
+        ).all()
+
+        high_price = float(current_row["high"])
+        low_price = float(current_row["low"])
+        timestamp = pd.Timestamp(current_row[ts_col])
+
+        # Resistance: high within tolerance, followed by bearish reversal
+        if (
+            abs(high_price - last_close) <= tolerance
+            and is_bearish_follow_through
+        ):
+            resistance_candidates.append((high_price, timestamp))
+
+        # Support: low within tolerance, followed by bullish reversal
+        if (
+            abs(low_price - last_close) <= tolerance
+            and is_bullish_follow_through
+        ):
+            support_candidates.append((low_price, timestamp))
+
+    # Use structure_first mode to prioritize oldest/most structural reversals
+    supports = _rank_levels(
+        support_candidates, last_close, levels, sort_desc=False, mode="structure_first"
+    )
+    resistances = _rank_levels(
+        resistance_candidates,
+        last_close,
+        levels,
+        sort_desc=True,
+        mode="structure_first",
+    )
+    return supports, resistances
+
+
+def compute_support_resistance(df: pd.DataFrame, interval: str, levels: int = 2) -> Tuple[List[float], List[float]]:
+    """
+    Detect support/resistance levels using interval-specific algorithms.
+
+    Each timeframe uses a tailored reversal detection algorithm optimized for
+    HITL (Human-In-The-Loop) trading decisions:
+
+    - **1h (intraday)**: Time-priority approach
+      - Analyzes last ~10 business days (240 bars)
+      - Identifies daily highs/lows confirmed by 5+ hours of non-revisit
+      - Prioritizes proximity to current price
+
+    - **4h (swing)**: Structure-priority approach
+      - Analyzes last ~2-4 weeks (60 bars)
+      - Detects week-over-week breakouts/breakdowns
+      - Prioritizes necklines and structural levels over proximity
+
+    - **1d (position)**: Structure-priority approach
+      - Analyzes last ~30-60 business days (60 bars)
+      - Filters to levels within ±5 yen of current price
+      - Confirms reversals with 3 consecutive candles
+      - Prioritizes oldest/deepest reversals
+
+    Args:
+        df: OHLC DataFrame with columns [datetime/timestamp, open, high, low, close, volume]
+        interval: Timeframe identifier ('1h', '4h', '1d', etc.)
+        levels: Maximum number of levels to return per side (default: 2)
+
+    Returns:
+        Tuple of (support_levels, resistance_levels)
+        - support_levels: List of price levels (sorted ascending)
+        - resistance_levels: List of price levels (sorted descending)
+        - May return fewer than 'levels' if limited qualified candidates exist
+        - Returns empty lists if DataFrame is empty
+
+    Fallback:
+        - If no qualified levels found for one side, falls back to simple extremes
+        - If interval is unrecognized, uses simple min/max extremes
+
+    Example:
+        >>> df = pd.read_csv("USDJPY_1h_10d.csv")
+        >>> supports, resistances = compute_support_resistance(df, "1h", levels=2)
+        >>> print(f"Support: {supports}, Resistance: {resistances}")
+        Support: [149.20, 149.85], Resistance: [151.20, 150.95]
+    """
+    ts_col = _get_time_column(df)
+    working = df.copy()
+    working[ts_col] = pd.to_datetime(working[ts_col], errors="coerce", utc=True)
+    working = working.dropna(subset=[ts_col, "high", "low", "close"]).sort_values(ts_col)
+
+    if working.empty:
+        return [], []
+
+    last_close = float(working["close"].iloc[-1])
+
+    interval_key = interval.lower()
+    if interval_key == "1h":
+        supports, resistances = _compute_intraday_reversals(working, ts_col, levels, last_close)
+    elif interval_key == "4h":
+        supports, resistances = _compute_four_hour_levels(working, ts_col, levels, last_close)
+    elif interval_key == "1d":
+        supports, resistances = _compute_daily_reversals(working, ts_col, levels, last_close)
+    else:
+        supports, resistances = _fallback_extremes(working, levels)
+
+    # Fallback to extremes if no qualified levels were found for one side
+    if not supports:
+        supports, _ = _fallback_extremes(working, levels)
+    if not resistances:
+        _, resistances = _fallback_extremes(working, levels)
+
+    return supports, resistances
 
 
 def compute_rsi(closes: pd.Series, period: int = 14) -> Optional[float]:
@@ -224,7 +571,7 @@ def compute_average_volatility(df: pd.DataFrame) -> Optional[float]:
 def analyze_dataframe(df: pd.DataFrame, pair: str, interval: str, period: str) -> AnalysisResult:
     """Compute all analytics for a single OHLC dataframe."""
     trend = detect_trend(df["close"])
-    support_levels, resistance_levels = compute_support_resistance(df)
+    support_levels, resistance_levels = compute_support_resistance(df, interval)
     rsi = compute_rsi(df["close"])
     atr = compute_atr(df)
     avg_volatility = compute_average_volatility(df)

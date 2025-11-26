@@ -237,6 +237,52 @@ def test_consolidated_summary_to_dict():
     assert result_dict["metadata"]["total_timeframes"] == 1
 
 
+def test_consolidated_summary_to_dict_metadata_immutability():
+    """Test that modifying returned dict does not affect original metadata."""
+    tf_1h = sc.TimeframeAnalysis(
+        interval="1h",
+        period="10d",
+        trend="UP",
+        support_levels=[149.85],
+        resistance_levels=[151.20],
+        rsi=62.45,
+        atr=0.3245,
+        average_volatility=0.2812,
+        data_timestamp="2025-11-25T08:00:00+09:00",
+    )
+
+    original_metadata = {
+        "source_files": ["USDJPY_1h_10d_analysis.json"],
+        "total_timeframes": 1,
+        "missing_timeframes": ["4h"],
+        "consolidation_version": "1.0.0",
+    }
+
+    summary = sc.ConsolidatedSummary(
+        pair="USDJPY",
+        schema_version=2,
+        generated_at="2025-11-25T10:00:00+09:00",
+        timeframes={"1h": tf_1h},
+        metadata=original_metadata.copy(),
+    )
+
+    # Get original metadata values
+    original_total = summary.metadata["total_timeframes"]
+    original_files = summary.metadata["source_files"].copy()
+
+    # Call to_dict() and modify the returned dict
+    result_dict = summary.to_dict()
+    result_dict["metadata"]["total_timeframes"] = 999
+    result_dict["metadata"]["new_key"] = "modified"
+    result_dict["metadata"]["source_files"].append("modified_file.json")
+
+    # Verify original metadata was not affected
+    assert summary.metadata["total_timeframes"] == original_total
+    assert summary.metadata["source_files"] == original_files
+    assert "new_key" not in summary.metadata
+    assert summary.metadata is not result_dict["metadata"]
+
+
 def test_write_summary(tmp_path):
     """Test writing summary to JSON file."""
     tf_1h = sc.TimeframeAnalysis(

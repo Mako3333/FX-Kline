@@ -1,0 +1,68 @@
+{
+  "pair": "XAUUSD",
+  "schema_version": 2,
+  "generated_at": "2025-11-26T09:13:19.533381+09:00",
+  "timeframes": {
+    "1d": {
+      "interval": "1d",
+      "period": "200d",
+      "trend": "UP",
+      "support_levels": [
+        2834.1001,
+        2863.3999
+      ],
+      "resistance_levels": [
+        4358.0,
+        4356.6001
+      ],
+      "rsi": 60.45,
+      "atr": 61.6143,
+      "average_volatility": 48.2845,
+      "data_timestamp": "2025-11-26T09:13:18.776807+09:00"
+    },
+    "4h": {
+      "interval": "4h",
+      "period": "35d",
+      "trend": "UP",
+      "support_levels": [
+        3901.3,
+        3919.2
+      ],
+      "resistance_levels": [
+        4398.0,
+        4396.5
+      ],
+      "rsi": 63.36,
+      "atr": 44.6715,
+      "average_volatility": 42.9136,
+      "data_timestamp": "2025-11-26T09:13:18.796283+09:00"
+    },
+    "1h": {
+      "interval": "1h",
+      "period": "10d",
+      "trend": "DOWN",
+      "support_levels": [
+        3997.3999,
+        4002.5
+      ],
+      "resistance_levels": [
+        4250.0,
+        4248.7002
+      ],
+      "rsi": 55.82,
+      "atr": 54.3286,
+      "average_volatility": 22.8054,
+      "data_timestamp": "2025-11-26T09:13:18.786122+09:00"
+    }
+  },
+  "metadata": {
+    "source_files": [
+      "XAUUSD_1d_200d_analysis.json",
+      "XAUUSD_1h_10d_analysis.json",
+      "XAUUSD_4h_35d_analysis.json"
+    ],
+    "consolidation_version": "1.0.0",
+    "total_timeframes": 3,
+    "missing_timeframes": []
+  }
+}
