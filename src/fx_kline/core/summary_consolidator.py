@@ -2,7 +2,7 @@
 Consolidate multi-timeframe analysis reports into unified summary files per currency pair.
 
 Accepts individual analysis JSON files (schema_version >= 1) from reports/ directory
-and produces consolidated summary JSON files (schema_version=2) in summary_reports/ directory.
+and produces consolidated summary JSON files (schema_version=2.1) in summary_reports/ directory.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 _ANALYSIS_FILE_PATTERN = re.compile(r"^([A-Z]+)_(.+)_analysis\.json$")
 _EXPECTED_TIMEFRAMES = {"1h", "4h", "1d"}
 _TIMEFRAME_ORDER = ["1d", "4h", "1h"]  # Macro to micro view
-_CONSOLIDATION_VERSION = "1.1.0"
+_CONSOLIDATION_VERSION = "1.2.0"
 
 
 @dataclass
@@ -42,13 +42,14 @@ class TimeframeAnalysis:
     sma: Optional[dict] = None
     ema: Optional[dict] = None
     timeframe: Optional[str] = None
+    time_of_day: Optional[dict] = None
 
 
 @dataclass
 class ConsolidatedSummary:
     """Multi-timeframe summary for a single currency pair."""
     pair: str
-    schema_version: int
+    schema_version: float
     generated_at: str
     timeframes: Dict[str, dict]
     metadata: dict
@@ -128,9 +129,9 @@ def load_analysis_file(file_path: Path) -> Optional[TimeframeAnalysis]:
 
     # Validate schema version
     schema_version = data.get("schema_version")
-    if schema_version not in {1, 2}:
+    if schema_version not in {1, 2, 2.1}:
         logger.error(
-            f"Invalid schema_version in {file_path.name}: expected 1 or 2, got {schema_version}"
+            f"Invalid schema_version in {file_path.name}: expected 1, 2, or 2.1, got {schema_version}"
         )
         return None
 
@@ -148,6 +149,7 @@ def load_analysis_file(file_path: Path) -> Optional[TimeframeAnalysis]:
             data_timestamp=data["generated_at"],  # Rename to data_timestamp
             sma=data.get("sma"),
             ema=data.get("ema"),
+            time_of_day=data.get("time_of_day"),
             timeframe=data.get("timeframe") or data.get("interval"),
         )
     except KeyError as exc:
@@ -225,12 +227,12 @@ def consolidate_pair_analyses(
         "source_files": sorted(source_files),
         "consolidation_version": _CONSOLIDATION_VERSION,
         "total_timeframes": len(timeframes_dict),
-        "missing_timeframes": missing_timeframes,
+            "missing_timeframes": missing_timeframes,
     }
 
     return ConsolidatedSummary(
         pair=pair,
-        schema_version=2,
+        schema_version=2.1,
         generated_at=get_jst_now().isoformat(),
         timeframes=ordered_timeframes,
         metadata=metadata,

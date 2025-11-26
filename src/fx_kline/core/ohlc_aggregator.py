@@ -1,13 +1,13 @@
 """
 Aggregate OHLC CSV files and compute lightweight technical indicators.
 
-Outputs a JSON document (schema_version=2) per input file with:
+Outputs a JSON document (schema_version=2.1) per input file with:
     - trend
     - support/resistance levels (ATR-aware)
     - RSI14
     - ATR14
     - average volatility
-    - SMA slopes/order/deviation
+    - SMA slopes/order/deviation_pct
     - EMA reactions
 """
 
@@ -35,17 +35,30 @@ _TREND_THRESHOLD = 0.002  # ~0.2% drift threshold before calling UP/DOWN
 
 # Support/Resistance detection constants
 INTRADAY_LOOKBACK_BARS = 120  # ~5 business days for 1h interval
+INTRADAY_SECONDARY_LOOKBACK_BARS = 48  # Secondary window for 1h support/resistance
 FOUR_HOUR_LOOKBACK_BARS = 60  # ~2 weeks for 4h interval (15 days * 4 bars/day)
-DAILY_LOOKBACK_BARS = 60  # ~3 months for 1d interval
+DAILY_LOOKBACK_BARS = 42  # ~2 months (trading days) for 1d interval
 
-INTRADAY_REVERSAL_HOURS = 5  # Hours to confirm reversal
 DAILY_REVERSAL_CANDLES = 3  # Consecutive candles for reversal
+
+# Label for daily analysis period (analysis uses last 42 bars even if CSV holds more)
+DAILY_ANALYSIS_PERIOD_LABEL = "42bars"
+
+# Support/Resistance merge tolerance multiplier
+LEVEL_MERGE_ATR_MULTIPLIER = 1.5
+
+# Time-of-day reversal detection
+TIME_OF_DAY_LOOKBACK_SESSIONS = 10
+REVERSAL_WINDOW_MIN = 3
+REVERSAL_WINDOW_MAX = 5
+REVERSAL_DEV_THRESHOLD_HIGH = 0.007  # 0.7%
+REVERSAL_DEV_THRESHOLD_MID = 0.004  # 0.4%
 
 # EMA reaction detection windows (bars inspected for reactions)
 EMA_REACTION_WINDOWS = {
     "1h": 120,
     "4h": 60,
-    "1d": 60,
+    "1d": 42,
 }
 
 # Moving average periods
@@ -76,8 +89,9 @@ class AnalysisResult:
     generated_at: str
     sma: dict = field(default_factory=dict)
     ema: dict = field(default_factory=dict)
+    time_of_day: Optional[dict] = None
     timeframe: Optional[str] = None
-    schema_version: int = 2
+    schema_version: float = 2.1
 
     def to_dict(self) -> dict:
         data = asdict(self)
@@ -210,7 +224,7 @@ def _classify_slope_label(slope: Optional[float]) -> str:
 
 
 def compute_sma_features(closes: pd.Series) -> dict:
-    """Compute SMA latest, slope labels, ordering, and SMA5 deviation."""
+    """Compute SMA latest, slope labels, ordering, and SMA5 deviation_pct."""
     result: dict = {}
     clean = closes.dropna()
     sma_series: dict[int, pd.Series] = {}
@@ -227,7 +241,7 @@ def compute_sma_features(closes: pd.Series) -> dict:
         }
 
         if period == 5 and entry["latest"] is not None and not clean.empty:
-            entry["deviation"] = _safe_round(
+            entry["deviation_pct"] = _safe_round(
                 (clean.iloc[-1] - entry["latest"]) / entry["latest"],
                 4,
             )
@@ -491,102 +505,55 @@ def _fill_levels_from_candidates(
 
 
 def _compute_intraday_reversals(
-    df: pd.DataFrame, ts_col: str, levels: int, last_close: float, atr: Optional[float] = None
+    df: pd.DataFrame, levels: int, atr: Optional[float] = None
 ) -> Tuple[List[float], List[float]]:
     """
-    Detect intraday support/resistance for 1-hour timeframe.
+    Detect intraday support/resistance for 1-hour timeframe using dual lookbacks.
 
     Algorithm:
-        1. Analyze last ~10 business days (240 bars for 1h interval)
-        2. Group bars by session date
-        3. Identify each day's high and low
-        4. Confirm reversal if price doesn't return for 5+ hours after high/low
-
-    Args:
-        df: OHLC DataFrame with datetime column
-        ts_col: Name of the timestamp column
-        levels: Maximum number of levels to return per side
-        last_close: Current price for proximity ranking
-
-    Returns:
-        Tuple of (support_levels, resistance_levels)
+        1. Support/Resistance #1: extremes from last 120 bars.
+        2. Support/Resistance #2: extremes from last 48 bars.
+        3. Deduplicate with ATR-based tolerance (ATR * 1.5) when available.
     """
-    window = df.tail(INTRADAY_LOOKBACK_BARS).copy()
-    window["session_date"] = window[ts_col].dt.date
+    window_primary = df.tail(INTRADAY_LOOKBACK_BARS).copy()
+    window_secondary = df.tail(INTRADAY_SECONDARY_LOOKBACK_BARS).copy()
+    tolerance = (atr * LEVEL_MERGE_ATR_MULTIPLIER) if atr is not None else 0.0
 
-    support_candidates: List[Tuple[float, pd.Timestamp]] = []
-    resistance_candidates: List[Tuple[float, pd.Timestamp]] = []
+    supports: List[float] = []
+    resistances: List[float] = []
 
-    for session_date in sorted(window["session_date"].unique(), reverse=True):
-        daily = window[window["session_date"] == session_date]
-        if daily.empty:
-            continue
+    def _add_candidate(container: List[float], candidate: Optional[float]) -> None:
+        if candidate is None:
+            return
+        if tolerance > 0 and any(abs(candidate - existing) < tolerance for existing in container):
+            return
+        if candidate in container:
+            return
+        container.append(candidate)
 
-        high_idx = daily["high"].idxmax()
-        low_idx = daily["low"].idxmin()
+    if not window_primary.empty:
+        support_120 = _safe_round(window_primary["low"].min(), 4)
+        resistance_120 = _safe_round(window_primary["high"].max(), 4)
+        _add_candidate(supports, support_120)
+        _add_candidate(resistances, resistance_120)
 
-        high_time = window.loc[high_idx, ts_col]
-        low_time = window.loc[low_idx, ts_col]
+    if not window_secondary.empty:
+        support_48 = _safe_round(window_secondary["low"].min(), 4)
+        resistance_48 = _safe_round(window_secondary["high"].max(), 4)
+        _add_candidate(supports, support_48)
+        _add_candidate(resistances, resistance_48)
 
-        day_high = float(window.loc[high_idx, "high"])
-        day_low = float(window.loc[low_idx, "low"])
+    supports = supports[:levels]
+    resistances = resistances[:levels]
 
-        # Check if high was not revisited in the next 5 hours
-        post_high = window[window[ts_col] > high_time].head(INTRADAY_REVERSAL_HOURS)
-        if post_high.shape[0] >= INTRADAY_REVERSAL_HOURS and post_high["high"].max() < day_high:
-            resistance_candidates.append((day_high, pd.Timestamp(high_time)))
-
-        # Check if low was not revisited in the next 5 hours
-        post_low = window[window[ts_col] > low_time].head(INTRADAY_REVERSAL_HOURS)
-        if post_low.shape[0] >= INTRADAY_REVERSAL_HOURS and post_low["low"].min() > day_low:
-            support_candidates.append((day_low, pd.Timestamp(low_time)))
-
-    tolerance = atr if atr is not None else 0.0
-
-    merged_supports = _merge_candidates_by_atr(
-        support_candidates, tolerance, is_support=True
-    )
-    merged_resistances = _merge_candidates_by_atr(
-        resistance_candidates, tolerance, is_support=False
-    )
-
-    supports = _rank_levels(
-        merged_supports, last_close, levels, sort_desc=False, max_price=last_close
-    )
-
-    min_resistance_price = last_close
-    if supports:
-        min_resistance_price = max(min_resistance_price, max(supports))
-
-    resistances = _rank_levels(
-        merged_resistances, last_close, levels, sort_desc=True, min_price=min_resistance_price
-    )
-
-    if tolerance > 0:
-        supports = _fill_levels_from_candidates(
-            supports,
-            support_candidates,
-            tolerance,
-            levels,
-            is_support=True,
-            max_price=last_close,
-        )
-        min_resistance_price = last_close if not supports else max(last_close, max(supports))
-        resistances = _fill_levels_from_candidates(
-            resistances,
-            resistance_candidates,
-            tolerance,
-            levels,
-            is_support=False,
-            min_price=min_resistance_price,
-        )
-
-    if not supports or not resistances:
-        fallback_supports, fallback_resistances = _fallback_extremes(window, levels)
-        if not supports:
-            supports = fallback_supports
-        if not resistances:
-            resistances = fallback_resistances
+    if len(supports) < levels or len(resistances) < levels:
+        fallback_supports, fallback_resistances = _fallback_extremes(df, levels)
+        for price in fallback_supports:
+            _add_candidate(supports, price)
+        for price in fallback_resistances:
+            _add_candidate(resistances, price)
+        supports = supports[:levels]
+        resistances = resistances[:levels]
 
     return supports, resistances
 
@@ -651,7 +618,7 @@ def _compute_four_hour_levels(
         support_candidates = [(float(price), last_ts) for price in fallback_supports]
         resistance_candidates = [(float(price), last_ts) for price in fallback_resistances]
 
-    tolerance = atr if atr is not None else 0.0
+    tolerance = (atr * LEVEL_MERGE_ATR_MULTIPLIER) if atr is not None else 0.0
 
     merged_supports = _merge_candidates_by_atr(
         support_candidates, tolerance, is_support=True
@@ -694,7 +661,7 @@ def _compute_daily_reversals(
     Detect daily support/resistance with three-candle reversal confirmation.
 
     Algorithm:
-        1. Analyze last ~30-60 business days (60 bars for 1d interval)
+        1. Analyze last ~2 months of trading days (42 bars for 1d interval)
         2. High followed by 3 consecutive bearish candles → resistance candidate
         3. Low followed by 3 consecutive bullish candles → support candidate
         4. Filter resistances to >= last_close, supports to <= last_close
@@ -791,18 +758,18 @@ def compute_support_resistance(
     Each timeframe uses a tailored reversal detection algorithm optimized for
     HITL (Human-In-The-Loop) trading decisions:
 
-    - **1h (intraday)**: Time-priority approach
-      - Analyzes last ~10 business days (240 bars)
-      - Identifies daily highs/lows confirmed by 5+ hours of non-revisit
-      - Prioritizes proximity to current price
+    - **1h (intraday)**: Dual-lookback extremes
+      - Uses last 120 bars for primary support/resistance
+      - Uses last 48 bars for secondary support/resistance
+      - Deduplicates with ATR-aware tolerance
 
     - **4h (swing)**: Structure-priority approach
       - Analyzes last ~2-4 weeks (60 bars)
       - Detects week-over-week breakouts/breakdowns
       - Prioritizes necklines and structural levels over proximity
 
-    - **1d (position)**: Structure-priority approach
-      - Analyzes last ~30-60 business days (60 bars)
+        - **1d (position)**: Structure-priority approach
+          - Analyzes last ~2 months of trading days (42 bars)
       - Filters to levels within ±5 yen of current price
       - Confirms reversals with 3 consecutive candles
       - Prioritizes oldest/deepest reversals
@@ -843,7 +810,7 @@ def compute_support_resistance(
     interval_key = interval.lower()
     if interval_key == "1h":
         supports, resistances = _compute_intraday_reversals(
-            working, ts_col, levels, last_close, atr=atr_for_levels
+            working, levels, atr=atr_for_levels
         )
     elif interval_key == "4h":
         supports, resistances = _compute_four_hour_levels(
@@ -863,6 +830,97 @@ def compute_support_resistance(
         _, resistances = _fallback_extremes(working, levels)
 
     return supports, resistances
+
+
+def _select_reversal_window(dev_abs: Optional[float]) -> int:
+    """Map SMA5 deviation_pct to a reversal window length."""
+    if dev_abs is None or pd.isna(dev_abs):
+        return REVERSAL_WINDOW_MAX
+
+    if dev_abs >= REVERSAL_DEV_THRESHOLD_HIGH:
+        return REVERSAL_WINDOW_MIN
+    if dev_abs >= REVERSAL_DEV_THRESHOLD_MID:
+        return REVERSAL_WINDOW_MIN + 1
+    return REVERSAL_WINDOW_MAX
+
+
+def compute_time_of_day_reversals(df: pd.DataFrame, ts_col: str) -> Optional[dict]:
+    """
+    Compute time-of-day reversal propensity over the last 10 sessions (1h data).
+    """
+    if df.empty:
+        return None
+
+    working = df.copy()
+    working[ts_col] = pd.to_datetime(working[ts_col], utc=True, errors="coerce")
+    working = working.dropna(subset=[ts_col, "high", "low", "close"]).sort_values(ts_col)
+    if working.empty:
+        return None
+
+    working["jst_ts"] = working[ts_col].dt.tz_convert("Asia/Tokyo")
+    working["session_date"] = working["jst_ts"].dt.date
+
+    session_dates = sorted(working["session_date"].unique())
+    session_dates = session_dates[-TIME_OF_DAY_LOOKBACK_SESSIONS:]
+    working = working[working["session_date"].isin(session_dates)].copy()
+    if working.empty:
+        return None
+
+    working = working.reset_index(drop=True)
+
+    sma5 = working["close"].rolling(window=5, min_periods=5).mean()
+    working["sma5_dev_pct"] = (working["close"] - sma5) / sma5
+
+    hour_denominator = {}
+    for hour in working["jst_ts"].dt.hour:
+        hour_denominator[hour] = hour_denominator.get(hour, 0) + 1
+
+    reversal_counts = {}
+
+    for session_date in sorted(set(working["session_date"])):
+        daily = working[working["session_date"] == session_date]
+        if daily.empty:
+            continue
+
+        day_high = -np.inf
+        day_low = np.inf
+
+        for idx, row in daily.iterrows():
+            price_high = float(row["high"])
+            price_low = float(row["low"])
+            ts_hour = int(row["jst_ts"].hour)
+            dev_abs = abs(float(row["sma5_dev_pct"])) if pd.notna(row["sma5_dev_pct"]) else None
+            window = _select_reversal_window(dev_abs)
+
+            if price_high > day_high:
+                day_high = price_high
+                confirm_slice = daily[daily.index > idx].head(window)
+                if confirm_slice.shape[0] >= window and confirm_slice["high"].max() < price_high:
+                    reversal_counts[ts_hour] = reversal_counts.get(ts_hour, 0) + 1
+
+            if price_low < day_low:
+                day_low = price_low
+                confirm_slice = daily[daily.index > idx].head(window)
+                if confirm_slice.shape[0] >= window and confirm_slice["low"].min() > price_low:
+                    reversal_counts[ts_hour] = reversal_counts.get(ts_hour, 0) + 1
+
+    if not reversal_counts:
+        return None
+
+    tod_score = {}
+    for hour, denom in sorted(hour_denominator.items()):
+        if denom <= 0:
+            continue
+        score = reversal_counts.get(hour, 0) / denom
+        tod_score[f"{hour:02d}"] = round(float(score), 2)
+
+    if not tod_score:
+        return None
+
+    return {
+        "reversal_window": {"min": REVERSAL_WINDOW_MIN, "max": REVERSAL_WINDOW_MAX},
+        "tod_score": tod_score,
+    }
 
 
 def compute_rsi(closes: pd.Series, period: int = 14) -> Optional[float]:
@@ -1053,11 +1111,17 @@ def analyze_dataframe(df: pd.DataFrame, pair: str, interval: str, period: str) -
     avg_volatility = compute_average_volatility(df)
     sma = compute_sma_features(df["close"])
     ema = compute_ema_features(df, interval)
+    time_of_day = None
+    if interval.lower() == "1h":
+        ts_col = _get_time_column(df)
+        time_of_day = compute_time_of_day_reversals(df, ts_col)
+
+    effective_period = DAILY_ANALYSIS_PERIOD_LABEL if interval.lower() == "1d" else period
 
     return AnalysisResult(
         pair=pair,
         interval=interval,
-        period=period,
+        period=effective_period,
         trend=trend,
         support_levels=support_levels,
         resistance_levels=resistance_levels,
@@ -1067,6 +1131,7 @@ def analyze_dataframe(df: pd.DataFrame, pair: str, interval: str, period: str) -
         generated_at=get_jst_now().isoformat(),
         sma=sma,
         ema=ema,
+        time_of_day=time_of_day,
         timeframe=interval,
     )
 
