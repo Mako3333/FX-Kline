@@ -32,13 +32,13 @@ _FILENAME_PATTERN = re.compile(
 _TREND_THRESHOLD = 0.002  # ~0.2% drift threshold before calling UP/DOWN
 
 # Support/Resistance detection constants
-INTRADAY_LOOKBACK_BARS = 240    # ~10 business days for 1h interval
-FOUR_HOUR_LOOKBACK_BARS = 84    # ~2 weeks for 4h interval (14 days * 6 bars/day)
-DAILY_LOOKBACK_BARS = 60        # ~30-60 business days for 1d interval
+INTRADAY_LOOKBACK_BARS = 240  # ~10 business days for 1h interval
+FOUR_HOUR_LOOKBACK_BARS = 84  # ~2 weeks for 4h interval (14 days * 6 bars/day)
+DAILY_LOOKBACK_BARS = 60  # ~30-60 business days for 1d interval
 
-INTRADAY_REVERSAL_HOURS = 5     # Hours to confirm reversal
-DAILY_REVERSAL_CANDLES = 3      # Consecutive candles for reversal
-DAILY_PRICE_TOLERANCE = 5.0     # Yen tolerance for 1d levels
+INTRADAY_REVERSAL_HOURS = 5  # Hours to confirm reversal
+DAILY_REVERSAL_CANDLES = 3  # Consecutive candles for reversal
+DAILY_PRICE_TOLERANCE_RATE = 0.005  # 0.5% tolerance for 1d levels (percentage-based)
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +295,7 @@ def _compute_four_hour_levels(
         Tuple of (support_levels, resistance_levels) sorted for readability
     """
     window = df.tail(FOUR_HOUR_LOOKBACK_BARS).copy()
+    # Note: to_period("W-SUN") drops timezone info, but this is acceptable for weekly grouping
     window["week"] = window[ts_col].dt.to_period("W-SUN")
 
     weekly = (
@@ -345,7 +346,7 @@ def _compute_daily_reversals(
 
     Algorithm:
         1. Analyze last ~30-60 business days (60 bars for 1d interval)
-        2. Filter to levels within ±5 yen of current price
+        2. Filter to levels within ±0.5% of current price
         3. High followed by 3 consecutive bearish candles → resistance
         4. Low followed by 3 consecutive bullish candles → support
         5. Prioritize oldest/deepest reversals (structural importance)
@@ -361,6 +362,7 @@ def _compute_daily_reversals(
         May return fewer than 'levels' if only limited qualified candidates exist
     """
     window = df.tail(DAILY_LOOKBACK_BARS).copy()
+    tolerance = last_close * DAILY_PRICE_TOLERANCE_RATE
 
     support_candidates: List[Tuple[float, pd.Timestamp]] = []
     resistance_candidates: List[Tuple[float, pd.Timestamp]] = []
@@ -371,24 +373,42 @@ def _compute_daily_reversals(
         if next_slice.shape[0] < DAILY_REVERSAL_CANDLES:
             break
 
-        is_bearish_follow_through = (next_slice["close"] < next_slice["open"]).all()
-        is_bullish_follow_through = (next_slice["close"] > next_slice["open"]).all()
+        is_bearish_follow_through = (
+            next_slice["close"] < next_slice["open"]
+        ).all()
+        is_bullish_follow_through = (
+            next_slice["close"] > next_slice["open"]
+        ).all()
 
         high_price = float(current_row["high"])
         low_price = float(current_row["low"])
         timestamp = pd.Timestamp(current_row[ts_col])
 
         # Resistance: high within tolerance, followed by bearish reversal
-        if abs(high_price - last_close) <= DAILY_PRICE_TOLERANCE and is_bearish_follow_through:
+        if (
+            abs(high_price - last_close) <= tolerance
+            and is_bearish_follow_through
+        ):
             resistance_candidates.append((high_price, timestamp))
 
         # Support: low within tolerance, followed by bullish reversal
-        if abs(low_price - last_close) <= DAILY_PRICE_TOLERANCE and is_bullish_follow_through:
+        if (
+            abs(low_price - last_close) <= tolerance
+            and is_bullish_follow_through
+        ):
             support_candidates.append((low_price, timestamp))
 
     # Use structure_first mode to prioritize oldest/most structural reversals
-    supports = _rank_levels(support_candidates, last_close, levels, sort_desc=False, mode="structure_first")
-    resistances = _rank_levels(resistance_candidates, last_close, levels, sort_desc=True, mode="structure_first")
+    supports = _rank_levels(
+        support_candidates, last_close, levels, sort_desc=False, mode="structure_first"
+    )
+    resistances = _rank_levels(
+        resistance_candidates,
+        last_close,
+        levels,
+        sort_desc=True,
+        mode="structure_first",
+    )
     return supports, resistances
 
 
