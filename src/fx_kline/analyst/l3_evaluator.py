@@ -154,19 +154,27 @@ class L3Evaluator:
         if raw_schema_version is None:
             raw_schema_version = self.l3.get("meta", {}).get("schema_version")
 
-        schema_version: float | None
-        if raw_schema_version is None:
-            schema_version = None
-        else:
+        def _parse_version_tuple(raw: object) -> tuple[int, ...] | None:
             try:
-                schema_version = float(raw_schema_version)
-            except (TypeError, ValueError):
-                schema_version = None
+                parts = [int(p) for p in str(raw).split(".")]
+                return tuple(parts)
+            except Exception:
+                return None
+
+        def _is_gte(version: tuple[int, ...] | None, target: tuple[int, ...]) -> bool:
+            if version is None:
+                return False
+            max_len = max(len(version), len(target))
+            v = list(version) + [0] * (max_len - len(version))
+            t = list(target) + [0] * (max_len - len(target))
+            return v >= t
+
+        schema_version = _parse_version_tuple(raw_schema_version)
 
         direction = strat.get("direction")
 
         # 1. 新スキーマ (>= 2.2) では direction 必須
-        if schema_version is not None and schema_version >= 2.2:
+        if _is_gte(schema_version, (2, 2)):
             if direction not in ("LONG", "SHORT"):
                 return None, "REQUIRES_DIRECTION"
 
