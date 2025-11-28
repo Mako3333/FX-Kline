@@ -12,8 +12,6 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
-import pandas as pd
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = REPO_ROOT / "src"
 if str(SRC_PATH) not in sys.path:

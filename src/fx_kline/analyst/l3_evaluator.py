@@ -101,14 +101,14 @@ class L3Evaluator:
         o = daily_df.iloc[0]["open"]
         c = daily_df.iloc[-1]["close"]
         h = daily_df["high"].max()
-        l = daily_df["low"].min()
+        low_val = daily_df["low"].min()
 
         return {
             "open": o,
             "close": c,
             "high": h,
-            "low": l,
-            "range": h - l,
+            "low": low_val,
+            "range": h - low_val,
             "body_high": max(o, c),
             "body_low": min(o, c),
         }
