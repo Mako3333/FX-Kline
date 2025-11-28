@@ -5,7 +5,7 @@ Tests both FX pairs and Gold Futures
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from fx_kline.core import fetch_single_ohlc, fetch_batch_ohlc_sync, OHLCRequest
 from datetime import datetime
@@ -94,14 +94,14 @@ def test_comprehensive():
     print(f"  Total succeeded: {response.total_succeeded}")
     print(f"  Total failed: {response.total_failed}")
 
-    if response.total_succeeded >= 2:  # Allow 1 failure due to potential API issues
+    if response.total_succeeded == response.total_requested:
         print(f"  [PASS] Batch fetch successful")
         for ohlc in response.successful:
             saturday_count = sum(1 for r in ohlc.rows if 'Saturday' in datetime.strptime(r['Datetime'][:19], '%Y-%m-%d %H:%M:%S').strftime('%A'))
             print(f"    {ohlc.pair}: {ohlc.data_count} rows (Saturday: {saturday_count})")
         results.append(("Batch fetch", True, response.total_succeeded))
     else:
-        print(f"  [FAIL] Too many failures")
+        print(f"  [FAIL] Expected {response.total_requested} successes, got {response.total_succeeded}")
         results.append(("Batch fetch", False, response.total_succeeded))
 
     # Summary
@@ -131,16 +131,20 @@ def test_comprehensive():
     print("  5. Batch fetch: All succeed with correct data counts")
 
     print("\nActual results:")
-    usdjpy_1h = next((c for n, s, c in results if n == "USDJPY 1h 5d" and s), 0)
-    xauusd_1h = next((c for n, s, c in results if n == "XAUUSD 1h 5d" and s), 0)
-    usdjpy_15m = next((c for n, s, c in results if n == "USDJPY 15m 1d" and s), 0)
-    xauusd_15m = next((c for n, s, c in results if n == "XAUUSD 15m 1d" and s), 0)
+    def get_result_count(test_name):
+        """Get count for a test, returns None if test failed or not found"""
+        return next((c for n, s, c in results if n == test_name and s), None)
+    
+    usdjpy_1h = get_result_count("USDJPY 1h 5d")
+    xauusd_1h = get_result_count("XAUUSD 1h 5d")
+    usdjpy_15m = get_result_count("USDJPY 15m 1d")
+    xauusd_15m = get_result_count("XAUUSD 15m 1d")
 
     checks = []
-    checks.append(("USDJPY 1h has substantial data", usdjpy_1h >= 80))
-    checks.append(("XAUUSD 1h has substantial data", xauusd_1h >= 80))
-    checks.append(("USDJPY 15m has multiple rows", usdjpy_15m >= 5))
-    checks.append(("XAUUSD 15m has multiple rows", xauusd_15m >= 5))
+    checks.append(("USDJPY 1h has substantial data", usdjpy_1h is not None and usdjpy_1h >= 80))
+    checks.append(("XAUUSD 1h has substantial data", xauusd_1h is not None and xauusd_1h >= 80))
+    checks.append(("USDJPY 15m has multiple rows", usdjpy_15m is not None and usdjpy_15m >= 5))
+    checks.append(("XAUUSD 15m has multiple rows", xauusd_15m is not None and xauusd_15m >= 5))
 
     print("")
     for check_name, check_result in checks:

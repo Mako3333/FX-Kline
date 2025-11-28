@@ -1,0 +1,215 @@
+{
+  "pair": "EURUSD",
+  "schema_version": 2.1,
+  "generated_at": "2025-11-28T08:23:20.372396+09:00",
+  "timeframes": {
+    "1d": {
+      "interval": "1d",
+      "period": "42bars",
+      "trend": "UP",
+      "support_levels": [
+        1.158
+      ],
+      "resistance_levels": [
+        1.1779,
+        1.1759
+      ],
+      "rsi": 53.25,
+      "atr": 0.0058,
+      "average_volatility": 0.0073,
+      "data_timestamp": "2025-11-28T08:23:19.376762+09:00",
+      "sma": {
+        "5": {
+          "latest": 1.1546,
+          "slope": "down",
+          "deviation_pct": 0.005
+        },
+        "13": {
+          "latest": 1.1571,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 1.1558,
+          "slope": "flat"
+        },
+        "ordering": "mixed"
+      },
+      "ema": {
+        "25": {
+          "latest": 1.1579,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 6
+        },
+        "75": {
+          "latest": 1.1602,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 0
+        },
+        "90": {
+          "latest": 1.1589,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 6
+        },
+        "200": {
+          "latest": 1.1395,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "1d",
+      "time_of_day": null
+    },
+    "4h": {
+      "interval": "4h",
+      "period": "35d",
+      "trend": "DOWN",
+      "support_levels": [
+        1.1494
+      ],
+      "resistance_levels": [
+        1.1656
+      ],
+      "rsi": 61.67,
+      "atr": 0.002,
+      "average_volatility": 0.0021,
+      "data_timestamp": "2025-11-28T08:23:19.462645+09:00",
+      "sma": {
+        "5": {
+          "latest": 1.1597,
+          "slope": "flat",
+          "deviation_pct": 0.0006
+        },
+        "13": {
+          "latest": 1.1593,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 1.1573,
+          "slope": "flat"
+        },
+        "ordering": "bullish"
+      },
+      "ema": {
+        "25": {
+          "latest": 1.1576,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 8
+        },
+        "75": {
+          "latest": 1.157,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 8
+        },
+        "90": {
+          "latest": 1.1572,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 8
+        },
+        "200": {
+          "latest": null,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "4h",
+      "time_of_day": null
+    },
+    "1h": {
+      "interval": "1h",
+      "period": "10d",
+      "trend": "SIDEWAYS",
+      "support_levels": [
+        1.1494,
+        1.1551
+      ],
+      "resistance_levels": [
+        1.1617
+      ],
+      "rsi": 57.88,
+      "atr": 0.0007,
+      "average_volatility": 0.001,
+      "data_timestamp": "2025-11-28T08:23:19.441222+09:00",
+      "sma": {
+        "5": {
+          "latest": 1.16,
+          "slope": "flat",
+          "deviation_pct": 0.0003
+        },
+        "13": {
+          "latest": 1.1597,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 1.1597,
+          "slope": "flat"
+        },
+        "ordering": "bullish"
+      },
+      "ema": {
+        "25": {
+          "latest": 1.1596,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 33
+        },
+        "75": {
+          "latest": 1.158,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 33
+        },
+        "90": {
+          "latest": 1.1577,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 33
+        },
+        "200": {
+          "latest": null,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "1h",
+      "time_of_day": {
+        "reversal_window": {
+          "min": 3,
+          "max": 5
+        },
+        "tod_score": {
+          "00": 0.38,
+          "01": 0.25,
+          "02": 0.25,
+          "03": 0.0,
+          "04": 0.0,
+          "05": 0.0,
+          "06": 0.12,
+          "07": 0.0,
+          "08": 0.25,
+          "09": 0.0,
+          "10": 0.33,
+          "11": 0.11,
+          "12": 0.11,
+          "13": 0.11,
+          "14": 0.0,
+          "15": 0.0,
+          "16": 0.0,
+          "17": 0.0,
+          "18": 0.12,
+          "19": 0.0,
+          "20": 0.0,
+          "21": 0.0,
+          "22": 0.0,
+          "23": 0.0
+        }
+      }
+    }
+  },
+  "metadata": {
+    "source_files": [
+      "EURUSD_1d_200d_analysis.json",
+      "EURUSD_1h_10d_analysis.json",
+      "EURUSD_4h_35d_analysis.json"
+    ],
+    "consolidation_version": "1.2.0",
+    "total_timeframes": 3,
+    "missing_timeframes": []
+  }
+}

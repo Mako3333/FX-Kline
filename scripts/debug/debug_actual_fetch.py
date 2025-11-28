@@ -4,13 +4,23 @@ Debug actual fetch with detailed logging to understand the issue
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+# More robust path resolution: find project root by locating 'src' directory
+# This works regardless of where the script is executed from
+_script_dir = Path(__file__).resolve().parent
+_project_root = _script_dir.parent.parent  # scripts/debug -> scripts -> project_root
+_src_path = _project_root / "src"
+if not _src_path.exists():
+    raise RuntimeError(f"Could not find 'src' directory at {_src_path}. "
+                      f"Script location: {_script_dir}")
+if str(_src_path) not in sys.path:
+    sys.path.insert(0, str(_src_path))
 
 import yfinance as yf
 import pandas as pd
-from src.fx_kline.core.timezone_utils import convert_dataframe_to_jst
-from src.fx_kline.core.business_days import filter_business_days_fx
-from src.fx_kline.core.validators import validate_currency_pair
+from fx_kline.core.timezone_utils import convert_dataframe_to_jst
+from fx_kline.core.business_days import filter_business_days_fx
+from fx_kline.core.validators import validate_currency_pair
 
 def debug_single_fetch_detailed(pair, interval, period):
     """Detailed debug of a single fetch operation"""
@@ -39,16 +49,22 @@ def debug_single_fetch_detailed(pair, interval, period):
         df.columns = df.columns.get_level_values(0)
 
     print(f"  First 3 rows (UTC):")
-    for i in range(min(3, len(df))):
-        print(f"    {df.index[i]}: O={df['Open'].iloc[i]:.2f}")
+    if 'Open' in df.columns:
+        for i in range(min(3, len(df))):
+            print(f"    {df.index[i]}: O={df['Open'].iloc[i]:.2f}")
+    else:
+        print(f"  Warning: 'Open' column not found. Available columns: {df.columns.tolist()}")
 
     # Step 3: Convert to JST
     print(f"\nStep 3: Convert to JST")
     df_jst = convert_dataframe_to_jst(df)
     print(f"  JST data shape: {df_jst.shape}")
     print(f"  First 3 rows (JST):")
-    for i in range(min(3, len(df_jst))):
-        print(f"    {df_jst.index[i]}: O={df_jst['Open'].iloc[i]:.2f}")
+    if 'Open' in df_jst.columns:
+        for i in range(min(3, len(df_jst))):
+            print(f"    {df_jst.index[i]}: O={df_jst['Open'].iloc[i]:.2f}")
+    else:
+        print(f"  Warning: 'Open' column not found after JST conversion.")
 
     # Step 4: Apply weekend filtering
     print(f"\nStep 4: Apply weekend filtering")
@@ -83,6 +99,8 @@ def debug_single_fetch_detailed(pair, interval, period):
     print(f"\nStep 7: Apply trimming logic")
     if expected_business_days is not None and len(unique_days) > expected_business_days:
         print(f"  Condition met: {len(unique_days)} > {expected_business_days}")
+        # Sort unique_days before slicing to ensure correct chronological order
+        unique_days = sorted(unique_days)
         keep_days = set(unique_days[-expected_business_days:])
         print(f"  Keep last {expected_business_days} days:")
         for day in sorted(keep_days):

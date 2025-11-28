@@ -19,7 +19,7 @@ def simulate_trimming_issue():
     dates = []
     base_date = datetime(2025, 10, 27, 9, 0, 0, tzinfo=JST_TZ)
 
-    for day in range(5):  # 5 days
+    for day in range(7):  # 7 days (more than expected_business_days=5 to trigger trimming)
         for hour in range(10):  # 10 hours per day
             dates.append(base_date + timedelta(days=day, hours=hour))
 
@@ -75,6 +75,10 @@ def simulate_trimming_issue():
         print(f"  All rows:")
         for idx in df_trimmed.index:
             print(f"    {idx}")
+    else:
+        print(f"\nStep 3: Trimming NOT applied")
+        print(f"  Reason: len(unique_days)={len(unique_days)}, expected={expected_business_days}")
+        print(f"  Condition: {len(unique_days)} > {expected_business_days} = {len(unique_days) > expected_business_days}")
 
     # Now test what happens if df.index already contains normalized timestamps
     print("\n\n" + "=" * 70)

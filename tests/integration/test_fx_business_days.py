@@ -4,8 +4,11 @@ Test script for FX business days filtering with DST support
 
 import pandas as pd
 import pytz
+import sys
+from pathlib import Path
 from datetime import datetime
-from src.fx_kline.core.business_days import (
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+from fx_kline.core.business_days import (
     is_combined_dst_active,
     get_fx_market_close_hour_jst,
     filter_business_days_fx

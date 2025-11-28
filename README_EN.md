@@ -181,7 +181,7 @@ Your browser will automatically open http://localhost:8501
 
 #### MCP Server
 
-See the detailed guide in [MCP_SETUP.md](./MCP_SETUP.md)
+See the detailed guide in [docs/MCP_SETUP.md](./docs/MCP_SETUP.md)
 
 ---
 
@@ -275,7 +275,7 @@ uv sync --extra mcp
 > Example (macOS/Linux): `/Users/username/projects/FX-Kline/run_mcp_server.py`
 > Example (Windows): `C:\Users\username\projects\FX-Kline\run_mcp_server.py`
 
-For detailed setup instructions and use cases, see **[MCP_SETUP.md](./MCP_SETUP.md)**
+For detailed setup instructions and use cases, see **[docs/MCP_SETUP.md](./docs/MCP_SETUP.md)**
 
 ### 🛠️ Implemented MCP Tools
 
@@ -326,7 +326,11 @@ fx-kline/
 ├── test_mcp_tools.py              # MCP tools test
 ├── pyproject.toml                 # Project configuration
 ├── README.md                      # Japanese README
-└── MCP_SETUP.md                   # MCP setup guide
+├── AGENTS.md                      # Development guidelines
+└── docs/                          # Documentation
+    ├── MCP_SETUP.md               # MCP setup guide
+    ├── MIGRATION.md                # Migration guide
+    └── SOW.md                     # Specification
 ```
 
 ### Architecture Highlights

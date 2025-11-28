@@ -2,10 +2,12 @@
 Test actual data fetching with the new FX business days filtering
 """
 
-import json
-from src.fx_kline.core.data_fetcher import fetch_single_ohlc
-from src.fx_kline.core.models import OHLCRequest
-from src.fx_kline.core.data_fetcher import fetch_batch_ohlc_sync
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+from fx_kline.core.data_fetcher import fetch_single_ohlc
+from fx_kline.core.models import OHLCRequest
+from fx_kline.core.data_fetcher import fetch_batch_ohlc_sync
 
 def test_single_fetch():
     """Test single data fetch scenarios"""

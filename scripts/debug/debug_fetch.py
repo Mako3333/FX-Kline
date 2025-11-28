@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from fx_kline.core.validators import validate_currency_pair, validate_timeframe, validate_period
 import yfinance as yf

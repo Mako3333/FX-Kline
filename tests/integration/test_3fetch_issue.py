@@ -5,7 +5,7 @@ Specifically: 1h/5d + 15m/1d + 1d/20d causes hourly data to have only 5 rows
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from fx_kline.core import fetch_batch_ohlc_sync, OHLCRequest
 from datetime import datetime

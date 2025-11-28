@@ -1,0 +1,216 @@
+{
+  "pair": "USDJPY",
+  "schema_version": 2.1,
+  "generated_at": "2025-11-27T08:23:27.160042+09:00",
+  "timeframes": {
+    "1d": {
+      "interval": "1d",
+      "period": "42bars",
+      "trend": "UP",
+      "support_levels": [
+        153.67
+      ],
+      "resistance_levels": [
+        157.887,
+        157.527
+      ],
+      "rsi": 63.83,
+      "atr": 1.1241,
+      "average_volatility": 1.1827,
+      "data_timestamp": "2025-11-27T08:23:26.255709+09:00",
+      "sma": {
+        "5": {
+          "latest": 156.8654,
+          "slope": "strong_up",
+          "deviation_pct": -0.0034
+        },
+        "13": {
+          "latest": 155.4705,
+          "slope": "up"
+        },
+        "21": {
+          "latest": 154.688,
+          "slope": "up"
+        },
+        "ordering": "bullish"
+      },
+      "ema": {
+        "25": {
+          "latest": 154.4764,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 28
+        },
+        "75": {
+          "latest": 151.4943,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        },
+        "90": {
+          "latest": 150.9834,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        },
+        "200": {
+          "latest": 149.5723,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "1d",
+      "time_of_day": null
+    },
+    "4h": {
+      "interval": "4h",
+      "period": "35d",
+      "trend": "UP",
+      "support_levels": [
+        153.611
+      ],
+      "resistance_levels": [
+        157.892
+      ],
+      "rsi": 48.92,
+      "atr": 0.418,
+      "average_volatility": 0.4162,
+      "data_timestamp": "2025-11-27T08:23:26.361827+09:00",
+      "sma": {
+        "5": {
+          "latest": 156.4116,
+          "slope": "flat",
+          "deviation_pct": -0.0005
+        },
+        "13": {
+          "latest": 156.3721,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 156.4717,
+          "slope": "flat"
+        },
+        "ordering": "mixed"
+      },
+      "ema": {
+        "25": {
+          "latest": 156.4066,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 0
+        },
+        "75": {
+          "latest": 155.6748,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 50
+        },
+        "90": {
+          "latest": 155.4324,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        },
+        "200": {
+          "latest": null,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "4h",
+      "time_of_day": null
+    },
+    "1h": {
+      "interval": "1h",
+      "period": "10d",
+      "trend": "UP",
+      "support_levels": [
+        155.645,
+        154.41
+      ],
+      "resistance_levels": [
+        157.892,
+        156.989
+      ],
+      "rsi": 47.84,
+      "atr": 0.1673,
+      "average_volatility": 0.215,
+      "data_timestamp": "2025-11-27T08:23:26.325227+09:00",
+      "sma": {
+        "5": {
+          "latest": 156.421,
+          "slope": "flat",
+          "deviation_pct": -0.0005
+        },
+        "13": {
+          "latest": 156.4601,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 156.3782,
+          "slope": "flat"
+        },
+        "ordering": "mixed"
+      },
+      "ema": {
+        "25": {
+          "latest": 156.379,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 0
+        },
+        "75": {
+          "latest": 156.4393,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 1
+        },
+        "90": {
+          "latest": 156.4356,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 1
+        },
+        "200": {
+          "latest": null,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "1h",
+      "time_of_day": {
+        "reversal_window": {
+          "min": 3,
+          "max": 5
+        },
+        "tod_score": {
+          "00": 0.75,
+          "01": 0.12,
+          "02": 0.25,
+          "03": 0.0,
+          "04": 0.0,
+          "05": 0.0,
+          "06": 0.0,
+          "07": 0.0,
+          "08": 0.12,
+          "09": 0.5,
+          "10": 0.0,
+          "11": 0.12,
+          "12": 0.12,
+          "13": 0.0,
+          "14": 0.0,
+          "15": 0.0,
+          "16": 0.0,
+          "17": 0.0,
+          "18": 0.38,
+          "19": 0.0,
+          "20": 0.0,
+          "21": 0.0,
+          "22": 0.0,
+          "23": 0.0
+        }
+      }
+    }
+  },
+  "metadata": {
+    "source_files": [
+      "USDJPY_1d_200d_analysis.json",
+      "USDJPY_1h_10d_analysis.json",
+      "USDJPY_4h_35d_analysis.json"
+    ],
+    "consolidation_version": "1.2.0",
+    "total_timeframes": 3,
+    "missing_timeframes": []
+  }
+}

@@ -18,8 +18,11 @@ def download_data(symbol, interval, period, label):
         print(f"[{label}] MultiIndex columns detected!")
         df.columns = df.columns.get_level_values(0)
 
-    print(f"[{label}] First row: {df.index[0]}")
-    print(f"[{label}] Last row: {df.index[-1]}")
+    if len(df) > 0:
+        print(f"[{label}] First row: {df.index[0]}")
+        print(f"[{label}] Last row: {df.index[-1]}")
+    else:
+        print(f"[{label}] WARNING: Empty dataframe returned")
 
     return label, df
 
@@ -85,7 +88,10 @@ def test_parallel_with_inspection():
         results[key] = df.copy()
 
         print(f"[{key}] FINISH download - {len(df)} rows")
-        print(f"[{key}] First: {df.index[0]}, Last: {df.index[-1]}")
+        if len(df) > 0:
+            print(f"[{key}] First: {df.index[0]}, Last: {df.index[-1]}")
+        else:
+            print(f"[{key}] WARNING: Empty dataframe")
         return key
 
     with ThreadPoolExecutor(max_workers=3) as executor:
@@ -101,11 +107,14 @@ def test_parallel_with_inspection():
     print("\n\nFINAL STORED RESULTS:")
     for key, df in results.items():
         print(f"  {key}: {len(df)} rows")
-        print(f"    First row: {df.index[0]}")
-        print(f"    Last row: {df.index[-1]}")
-        print(f"    Sample timestamps:")
-        for i in range(min(5, len(df))):
-            print(f"      {df.index[i]}")
+        if len(df) > 0:
+            print(f"    First row: {df.index[0]}")
+            print(f"    Last row: {df.index[-1]}")
+            print(f"    Sample timestamps:")
+            for i in range(min(5, len(df))):
+                print(f"      {df.index[i]}")
+        else:
+            print(f"    WARNING: Empty dataframe")
 
     return results
 
