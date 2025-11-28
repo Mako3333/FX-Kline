@@ -1,0 +1,217 @@
+{
+  "pair": "AUDUSD",
+  "schema_version": 2.1,
+  "generated_at": "2025-11-27T08:23:27.159003+09:00",
+  "timeframes": {
+    "1d": {
+      "interval": "1d",
+      "period": "42bars",
+      "trend": "UP",
+      "support_levels": [
+        0.6441,
+        0.6487
+      ],
+      "resistance_levels": [
+        0.663,
+        0.6627
+      ],
+      "rsi": 51.46,
+      "atr": 0.0047,
+      "average_volatility": 0.0051,
+      "data_timestamp": "2025-11-27T08:23:25.906286+09:00",
+      "sma": {
+        "5": {
+          "latest": 0.6478,
+          "slope": "down",
+          "deviation_pct": 0.0068
+        },
+        "13": {
+          "latest": 0.6504,
+          "slope": "down"
+        },
+        "21": {
+          "latest": 0.6516,
+          "slope": "flat"
+        },
+        "ordering": "bearish"
+      },
+      "ema": {
+        "25": {
+          "latest": 0.6512,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 17
+        },
+        "75": {
+          "latest": 0.6526,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 7
+        },
+        "90": {
+          "latest": 0.6522,
+          "reaction": "resistance_reject",
+          "reaction_bars_ago": 0
+        },
+        "200": {
+          "latest": 0.6484,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "1d",
+      "time_of_day": null
+    },
+    "4h": {
+      "interval": "4h",
+      "period": "35d",
+      "trend": "SIDEWAYS",
+      "support_levels": [
+        0.6424
+      ],
+      "resistance_levels": [
+        0.6582
+      ],
+      "rsi": 66.18,
+      "atr": 0.0017,
+      "average_volatility": 0.0018,
+      "data_timestamp": "2025-11-27T08:23:25.994271+09:00",
+      "sma": {
+        "5": {
+          "latest": 0.651,
+          "slope": "up",
+          "deviation_pct": 0.0018
+        },
+        "13": {
+          "latest": 0.6483,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 0.6473,
+          "slope": "flat"
+        },
+        "ordering": "bullish"
+      },
+      "ema": {
+        "25": {
+          "latest": 0.6483,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 7
+        },
+        "75": {
+          "latest": 0.6492,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 2
+        },
+        "90": {
+          "latest": 0.6495,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 2
+        },
+        "200": {
+          "latest": null,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "4h",
+      "time_of_day": null
+    },
+    "1h": {
+      "interval": "1h",
+      "period": "10d",
+      "trend": "SIDEWAYS",
+      "support_levels": [
+        0.6424,
+        0.644
+      ],
+      "resistance_levels": [
+        0.6523,
+        0.6539
+      ],
+      "rsi": 72.88,
+      "atr": 0.0007,
+      "average_volatility": 0.0009,
+      "data_timestamp": "2025-11-27T08:23:25.972940+09:00",
+      "sma": {
+        "5": {
+          "latest": 0.6521,
+          "slope": "flat",
+          "deviation_pct": 0.0001
+        },
+        "13": {
+          "latest": 0.6511,
+          "slope": "flat"
+        },
+        "21": {
+          "latest": 0.6508,
+          "slope": "flat"
+        },
+        "ordering": "bullish"
+      },
+      "ema": {
+        "25": {
+          "latest": 0.6504,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 30
+        },
+        "75": {
+          "latest": 0.6485,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 30
+        },
+        "90": {
+          "latest": 0.6483,
+          "reaction": "support_bounce",
+          "reaction_bars_ago": 30
+        },
+        "200": {
+          "latest": null,
+          "reaction": "none",
+          "reaction_bars_ago": null
+        }
+      },
+      "timeframe": "1h",
+      "time_of_day": {
+        "reversal_window": {
+          "min": 3,
+          "max": 5
+        },
+        "tod_score": {
+          "00": 0.25,
+          "01": 0.12,
+          "02": 0.25,
+          "03": 0.25,
+          "04": 0.0,
+          "05": 0.0,
+          "06": 0.25,
+          "07": 0.12,
+          "08": 0.12,
+          "09": 0.0,
+          "10": 0.0,
+          "11": 0.25,
+          "12": 0.0,
+          "13": 0.0,
+          "14": 0.12,
+          "15": 0.0,
+          "16": 0.0,
+          "17": 0.0,
+          "18": 0.12,
+          "19": 0.0,
+          "20": 0.0,
+          "21": 0.0,
+          "22": 0.0,
+          "23": 0.0
+        }
+      }
+    }
+  },
+  "metadata": {
+    "source_files": [
+      "AUDUSD_1d_200d_analysis.json",
+      "AUDUSD_1h_10d_analysis.json",
+      "AUDUSD_4h_35d_analysis.json"
+    ],
+    "consolidation_version": "1.2.0",
+    "total_timeframes": 3,
+    "missing_timeframes": []
+  }
+}

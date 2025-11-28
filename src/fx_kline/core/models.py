@@ -3,7 +3,7 @@ Data models for FX-Kline using Pydantic
 """
 
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 import pandas as pd
 
@@ -14,14 +14,15 @@ class OHLCRequest(BaseModel):
     interval: str = Field(..., description="Timeframe (1m, 5m, 15m, 1h, 1d, etc.)")
     period: str = Field(..., description="Period (e.g., '30d', '1mo')")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "pair": "USDJPY",
                 "interval": "1h",
                 "period": "30d"
             }
         }
+    )
 
 
 class BatchOHLCRequest(BaseModel):
@@ -29,8 +30,8 @@ class BatchOHLCRequest(BaseModel):
     requests: List[OHLCRequest] = Field(..., description="List of OHLC requests")
     exclude_weekends: bool = Field(True, description="Exclude weekend data")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "requests": [
                     {"pair": "USDJPY", "interval": "1d", "period": "30d"},
@@ -39,6 +40,7 @@ class BatchOHLCRequest(BaseModel):
                 "exclude_weekends": True
             }
         }
+    )
 
 
 class FetchError(BaseModel):
@@ -49,11 +51,6 @@ class FetchError(BaseModel):
     error_type: str
     error_message: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
 
 
 class OHLCData(BaseModel):
@@ -66,11 +63,6 @@ class OHLCData(BaseModel):
     rows: List[dict] = Field(description="OHLC data rows with Datetime, Open, High, Low, Close, Volume")
     timestamp_jst: Optional[datetime] = None
 
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
-
 
 class BatchOHLCResponse(BaseModel):
     """Response for batch OHLC requests"""
@@ -80,11 +72,6 @@ class BatchOHLCResponse(BaseModel):
     total_succeeded: int
     total_failed: int
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
 
     @property
     def summary(self) -> dict:

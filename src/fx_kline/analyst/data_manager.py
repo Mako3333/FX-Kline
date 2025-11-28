@@ -1,0 +1,45 @@
+"""
+Helpers for managing HITL trading data directories (date-partitioned storage).
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from pathlib import Path
+
+
+def _project_root() -> Path:
+    """Return the repository root based on this file location."""
+    return Path(__file__).resolve().parents[3]
+
+
+def get_data_root() -> Path:
+    """Path to the top-level data directory (repo_root/data)."""
+    return _project_root() / "data"
+
+
+def get_daily_data_dir(day: date) -> Path:
+    """
+    Path for a specific day under data/YYYY/MM/DD.
+
+    The caller is responsible for creating the directory when needed.
+    """
+    return get_data_root() / f"{day.year:04d}" / f"{day.month:02d}" / f"{day.day:02d}"
+
+
+def get_daily_summaries_dir(day: date) -> Path:
+    """
+    Path for L2 summaries under data/YYYY/MM/DD/summaries.
+
+    Directory is created if it does not exist.
+    """
+    target = get_daily_data_dir(day) / "summaries"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+__all__ = [
+    "get_data_root",
+    "get_daily_data_dir",
+    "get_daily_summaries_dir",
+]

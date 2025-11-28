@@ -1,7 +1,13 @@
 #!/usr/bin/env pwsh
 
+#
 # 最新の Daily OHLC Analysis のサマリーを取得して、
-# プロジェクト直下の summary_reports を最新化するだけのシンプルスクリプト。
+# プロジェクト直下の summary_reports を最新化するシンプルスクリプト。
+#
+# NOTE:
+#   今後は GitHub Actions が data/YYYY/MM/DD/summaries/ 配下に直接コミットし、
+#   自動で PR を作成する運用（PR を確認してマージ → git pull）へ移行予定です。
+#   このスクリプトは当面の間、旧アーティファクト取得フローとして残しています。
 
 $ErrorActionPreference = "Stop"
 
