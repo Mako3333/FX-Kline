@@ -53,7 +53,15 @@ def get_daily_ohlc_filepath(day: date, pair: str, timeframe: str = "15m") -> Pat
     """
     File path for an OHLC CSV: data/YYYY/MM/DD/ohlc/{PAIR}_{timeframe}.csv
     """
-    return get_daily_ohlc_dir(day) / f"{pair}_{timeframe}.csv"
+    # Sanitize pair and timeframe to prevent path traversal and invalid characters
+    safe_pair = pair.replace("/", "_").replace("\\", "_")
+    safe_timeframe = timeframe.replace("/", "_").replace("\\", "_")
+
+    # Ensure no path traversal
+    if ".." in safe_pair or ".." in safe_timeframe:
+        raise ValueError(f"Invalid characters in pair or timeframe: {pair}, {timeframe}")
+
+    return get_daily_ohlc_dir(day) / f"{safe_pair}_{safe_timeframe}.csv"
 
 
 __all__ = [

@@ -4,6 +4,7 @@ Supports parallel fetching with business day filtering and JST timezone conversi
 """
 
 import asyncio
+import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -15,7 +16,9 @@ import yfinance as yf
 from .business_days import filter_business_days_fx, get_business_days_back
 from .models import BatchOHLCResponse, FetchError, OHLCData, OHLCRequest
 from .validators import validate_currency_pair, validate_period, validate_timeframe
-from .timezone_utils import convert_dataframe_to_jst, get_jst_now
+from .timezone_utils import convert_dataframe_to_jst, get_jst_now, JST_TZ
+
+logger = logging.getLogger(__name__)
 
 # Thread pool for async yfinance calls
 # NOTE: max_workers=1 to avoid yfinance parallel execution bug
@@ -140,9 +143,25 @@ def fetch_ohlc_range_dataframe(
 ) -> pd.DataFrame:
     """
     Fetch OHLC data for a specific start/end window, returned as a JST-indexed DataFrame.
+
+    Args:
+        pair: Currency pair code (e.g., 'USDJPY')
+        interval: Timeframe (e.g., '1h', '15m', '1d')
+        start: Start datetime (timezone-aware preferred, naive datetimes assumed to be JST)
+        end: End datetime (timezone-aware preferred, naive datetimes assumed to be JST)
+        exclude_weekends: Filter out weekend data
+
+    Returns:
+        DataFrame with JST-indexed DatetimeIndex
     """
     pair_formatted = validate_currency_pair(pair)
     interval_validated = validate_timeframe(interval)
+
+    # Handle naive datetimes by assuming they are JST (project standard)
+    if start.tzinfo is None:
+        start = JST_TZ.localize(start)
+    if end.tzinfo is None:
+        end = JST_TZ.localize(end)
 
     start_utc = start.astimezone(timezone.utc)
     end_utc = end.astimezone(timezone.utc)
@@ -268,7 +287,8 @@ def fetch_single_ohlc(
                     row_dict['Volume'] = int(row['Volume']) if pd.notna(row['Volume']) else 0
                 rows.append(row_dict)
             except Exception as e:
-                # Skip rows with errors
+                # Log and skip rows with errors
+                logger.debug(f"Skipping row {idx} due to conversion error: {e}")
                 continue
 
         if not rows:

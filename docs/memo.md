@@ -157,11 +157,19 @@ Markdownレポートの直後に、以下のJSONコードブロックを出力�
 - 有効セッションを明記(`["TOKYO"]` / `["LONDON"]` / `["TOKYO", "LONDON"]`)
 - すべての数値フィールドは小数点形式で記入
 - **"PAIR_NAME" は必ず実際の通貨ペア名に置換し、テンプレート文字列のまま残さないこと**
+- `schema_version >= 2.2` の場合、すべての `strategies[]` に `direction` フィールドを必須とする（`"LONG"` または `"SHORT"`）。
+- `schema_version < 2.2` の旧スキーマでは `direction` が省略されていてもよいが、その場合 Evaluator 側で `strategy_type` から方向を推論する。
+
+推奨される `strategy_type` と `direction` の組み合わせ:
+- `DIP_BUY`  → `direction = "LONG"`
+- `RALLY_SELL` → `direction = "SHORT"`
+- `BREAKOUT`  → 上下どちらもあり得るため、**必ず `direction` を明示すること（推測禁止）**
 
 ```json
 {
   "meta": {
     "version": "1.0",
+    "schema_version": "2.2",
     "generated_at": "{{YYYY-MM-DD HH:MM:SS JST}}"
   },
   "market_environment": {
@@ -200,6 +208,7 @@ Markdownレポートの直後に、以下のJSONコードブロックを出力�
       "pair": "PAIR_NAME",
       "rank": 1,
       "strategy_type": "DIP_BUY|RALLY_SELL|BREAKOUT",
+      "direction": "LONG|SHORT",
       "valid_sessions": ["TOKYO", "LONDON"],
       "entry": {
         "zone_min": 0.000,
@@ -216,6 +225,7 @@ Markdownレポートの直後に、以下のJSONコードブロックを出力�
       "pair": "PAIR_NAME",
       "rank": 2,
       "strategy_type": "DIP_BUY|RALLY_SELL|BREAKOUT",
+      "direction": "LONG|SHORT",
       "valid_sessions": ["TOKYO", "LONDON"],
       "entry": {
         "zone_min": 0.000,
@@ -232,6 +242,7 @@ Markdownレポートの直後に、以下のJSONコードブロックを出力�
       "pair": "PAIR_NAME",
       "rank": 3,
       "strategy_type": "DIP_BUY|RALLY_SELL|BREAKOUT",
+      "direction": "LONG|SHORT",
       "valid_sessions": ["TOKYO", "LONDON"],
       "entry": {
         "zone_min": 0.000,

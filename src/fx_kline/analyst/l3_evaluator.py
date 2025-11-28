@@ -33,8 +33,18 @@ class L3Evaluator:
         self.atr_data = atr_data
 
         # meta.generated_at は "2025-11-27 09:00:00 JST" を想定
-        self.generated_at = pd.to_datetime(l3_json["meta"]["generated_at"])
-        self.target_date = self.generated_at.date()
+        try:
+            self.generated_at = pd.to_datetime(l3_json["meta"]["generated_at"])
+            self.target_date = self.generated_at.date()
+        except KeyError as e:
+            raise ValueError(f"Required key missing in l3_json: {e}")
+
+        # strategy_type から期待される方向
+        self.DIRECTION_BY_TYPE = {
+            "DIP_BUY": "LONG",
+            "RALLY_SELL": "SHORT",
+            # "BREAKOUT": None,  # BREAKOUT は特別扱い（常に direction 明示が必要）
+        }
 
         # 評価結果の器
         self.results: Dict[str, Any] = {
@@ -124,6 +134,73 @@ class L3Evaluator:
             "low": target_prev["low"].min(),
         }
 
+    def _resolve_direction(self, strat: Dict[str, Any]) -> tuple[str | None, str]:
+        """
+        戦略オブジェクトから最終的な direction を決定する。
+
+        戻り値: (direction or None, status_code)
+          - status_code:
+            - "OK"
+            - "INFERRED_FROM_TYPE"
+            - "REQUIRES_DIRECTION"
+            - "INVALID_DIRECTION"
+            - "DIRECTION_MISMATCH"
+            - "UNKNOWN_STRATEGY_TYPE"
+        """
+        stype = strat.get("strategy_type")
+
+        # schema_version は戦略個別、なければ L3 全体の meta から取得
+        raw_schema_version = strat.get("schema_version")
+        if raw_schema_version is None:
+            raw_schema_version = self.l3.get("meta", {}).get("schema_version")
+
+        schema_version: float | None
+        if raw_schema_version is None:
+            schema_version = None
+        else:
+            try:
+                schema_version = float(raw_schema_version)
+            except (TypeError, ValueError):
+                schema_version = None
+
+        direction = strat.get("direction")
+
+        # 1. 新スキーマ (>= 2.2) では direction 必須
+        if schema_version is not None and schema_version >= 2.2:
+            if direction not in ("LONG", "SHORT"):
+                return None, "REQUIRES_DIRECTION"
+
+            expected = self.DIRECTION_BY_TYPE.get(stype)
+            if expected and expected != direction:
+                return None, "DIRECTION_MISMATCH"
+
+            if stype == "BREAKOUT":
+                # BREAKOUT は必ず direction 明示が必要（ここまで来ていれば OK）
+                return direction, "OK"
+
+            return direction, "OK"
+
+        # 2. 旧スキーマ (< 2.2) では後方互換のため推論や緩めのチェックを許可
+        if direction:
+            if direction not in ("LONG", "SHORT"):
+                return None, "INVALID_DIRECTION"
+
+            expected = self.DIRECTION_BY_TYPE.get(stype)
+            if expected and expected != direction:
+                return None, "DIRECTION_MISMATCH"
+
+            return direction, "OK"
+
+        # 3. direction がない旧データ → strategy_type から推論
+        if stype in ("DIP_BUY", "RALLY_SELL"):
+            return self.DIRECTION_BY_TYPE[stype], "INFERRED_FROM_TYPE"
+
+        if stype == "BREAKOUT":
+            # BREAKOUT は推論しない（direction がなければ評価対象外）
+            return None, "REQUIRES_DIRECTION"
+
+        return None, "UNKNOWN_STRATEGY_TYPE"
+
     # =====================
     # ① 環境認識の評価
     # =====================
@@ -142,10 +219,14 @@ class L3Evaluator:
         for pair, pred in env_preds.items():
             stats = self._get_daily_stats(pair)
             prev_stats = self._get_prev_day_stats(pair)
-            atr = self.atr_data.get(pair, 1.0)
 
             if not stats or not prev_stats:
                 per_pair[pair] = {"status": "NO_DATA"}
+                continue
+
+            atr = self.atr_data.get(pair)
+            if not atr:
+                per_pair[pair] = {"status": "NO_ATR_DATA"}
                 continue
 
             # Volatility 判定
@@ -262,6 +343,19 @@ class L3Evaluator:
             if pair not in self.market_data:
                 continue
 
+            # 戦略方向の決定（schema_version と strategy_type を考慮）
+            direction, dir_status = self._resolve_direction(strat)
+            if direction is None:
+                per_pair.setdefault(pair, []).append(
+                    {
+                        "strategy_type": strat.get("strategy_type"),
+                        "result": "UNSUPPORTED_DIRECTION",
+                        "reason": dir_status,
+                        "pnl_pips": 0.0,
+                    }
+                )
+                continue
+
             df = self.market_data[pair]
             day_df = df[df.index.date == self.target_date].copy()
             if day_df.empty:
@@ -308,20 +402,39 @@ class L3Evaluator:
                 outcome = "HOLD"
 
                 for t, row in post_entry.iterrows():
-                    # ロング前提（現行ロジック）：SL -> LOSS, TP -> WIN
-                    if row["low"] <= exit_conf["stop_loss"]:
-                        outcome = "LOSS"
-                        pnl = exit_conf["stop_loss"] - entry_price
-                        break
+                    if direction == "LONG":
+                        # ロング：SL -> LOSS, TP -> WIN
+                        if row["low"] <= exit_conf["stop_loss"]:
+                            outcome = "LOSS"
+                            pnl = exit_conf["stop_loss"] - entry_price
+                            break
 
-                    if row["high"] >= exit_conf["take_profit"]:
-                        outcome = "WIN"
-                        pnl = exit_conf["take_profit"] - entry_price
-                        win_tp_count += 1
-                        break
+                        if row["high"] >= exit_conf["take_profit"]:
+                            outcome = "WIN"
+                            pnl = exit_conf["take_profit"] - entry_price
+                            win_tp_count += 1
+                            break
+                    else:  # SHORT
+                        # ショート：SL -> LOSS, TP -> WIN
+                        if row["high"] >= exit_conf["stop_loss"]:
+                            outcome = "LOSS"
+                            pnl = entry_price - exit_conf["stop_loss"]
+                            break
+
+                        if row["low"] <= exit_conf["take_profit"]:
+                            outcome = "WIN"
+                            pnl = entry_price - exit_conf["take_profit"]
+                            win_tp_count += 1
+                            break
 
                 if outcome == "HOLD" and not post_entry.empty:
-                    pnl = post_entry.iloc[-1]["close"] - entry_price
+                    # 最終クローズまで到達した場合の評価
+                    last_close = post_entry.iloc[-1]["close"]
+                    pnl = (
+                        last_close - entry_price
+                        if direction == "LONG"
+                        else entry_price - last_close
+                    )
 
             multiplier = 100 if "JPY" in pair else 10000
             pnl_pips = float(pnl * multiplier)

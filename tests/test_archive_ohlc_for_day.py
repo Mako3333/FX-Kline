@@ -15,7 +15,7 @@ for p in (SRC_PATH, SCRIPTS_PATH):
         sys.path.insert(0, str(p))
 
 from fx_kline.analyst import data_manager  # noqa: E402
-import archive_ohlc_for_day  # noqa: E402
+import scripts.archive_ohlc_for_day as archive_ohlc_for_day  # noqa: E402
 
 
 def test_archive_ohlc_for_day_creates_csv(monkeypatch, tmp_path):
@@ -54,4 +54,6 @@ def test_archive_ohlc_for_day_creates_csv(monkeypatch, tmp_path):
     assert csv_path.exists()
     content = csv_path.read_text(encoding="utf-8")
     assert "USDJPY" not in content  # sanity check: only OHLC rows
-    assert "datetime" in content.splitlines()[0]
+    lines = content.splitlines()
+    assert len(lines) > 0, "CSV file should not be empty"
+    assert "datetime" in lines[0]

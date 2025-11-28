@@ -108,3 +108,68 @@ def test_evaluator_runs_with_minimal_inputs():
     results = evaluator.run()
     assert "environment" in results
     assert "strategies" in results
+
+
+def _make_evaluator_with_schema(schema_version: str | None) -> L3Evaluator:
+    pred_date = date(2025, 11, 28)
+    meta: dict[str, object] = {
+        "version": "1.0",
+        "generated_at": f"{pred_date} 09:00:00 JST",
+    }
+    if schema_version is not None:
+        meta["schema_version"] = schema_version
+
+    l3_json = {
+        "meta": meta,
+        "market_environment": {},
+        "ranking": {},
+        "strategies": [],
+    }
+    return L3Evaluator(l3_json, market_data={}, atr_data={})
+
+
+def test_resolve_direction_new_schema_valid_combinations():
+    evaluator = _make_evaluator_with_schema("2.2")
+
+    # DIP_BUY + LONG
+    direction, status = evaluator._resolve_direction(
+        {"strategy_type": "DIP_BUY", "direction": "LONG"}
+    )
+    assert direction == "LONG"
+    assert status == "OK"
+
+    # RALLY_SELL + SHORT
+    direction, status = evaluator._resolve_direction(
+        {"strategy_type": "RALLY_SELL", "direction": "SHORT"}
+    )
+    assert direction == "SHORT"
+    assert status == "OK"
+
+
+def test_resolve_direction_new_schema_mismatch_and_requires():
+    evaluator = _make_evaluator_with_schema("2.2")
+
+    # DIP_BUY に対して SHORT はミスマッチ
+    direction, status = evaluator._resolve_direction(
+        {"strategy_type": "DIP_BUY", "direction": "SHORT"}
+    )
+    assert direction is None
+    assert status == "DIRECTION_MISMATCH"
+
+    # BREAKOUT で direction 不在は REQUIRES_DIRECTION
+    direction, status = evaluator._resolve_direction(
+        {"strategy_type": "BREAKOUT"}
+    )
+    assert direction is None
+    assert status == "REQUIRES_DIRECTION"
+
+
+def test_resolve_direction_old_schema_inferred_from_type():
+    # 旧スキーマ（2.2 未満 or 未指定）かつ direction なしの場合は推論
+    evaluator = _make_evaluator_with_schema("2.1")
+
+    direction, status = evaluator._resolve_direction(
+        {"strategy_type": "DIP_BUY"}
+    )
+    assert direction == "LONG"
+    assert status == "INFERRED_FROM_TYPE"

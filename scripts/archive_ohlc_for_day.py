@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Optional, Sequence
 
@@ -21,6 +21,8 @@ if str(SRC_PATH) not in sys.path:
 
 from fx_kline.analyst import data_manager  # noqa: E402
 from fx_kline.core import data_fetcher  # noqa: E402
+from fx_kline.core.business_days import is_business_day  # noqa: E402
+from fx_kline.core.timezone_utils import JST_TZ  # noqa: E402
 from fx_kline.core.validators import get_preset_pairs  # noqa: E402
 
 DEFAULT_PAIRS = ["USDJPY", "EURUSD", "AUDJPY", "AUDUSD", "EURJPY", "XAUUSD"]
@@ -41,15 +43,24 @@ def _default_pairs() -> list[str]:
 
 
 def _jst_datetime(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=timezone(timedelta(hours=9)))
+    """Create a JST datetime for the start of the given date."""
+    return JST_TZ.localize(datetime.combine(day, time.min))
 
 
 def archive_for_target_date(market_date: date, pairs: list[str], timeframe: str = DEFAULT_TIMEFRAME) -> None:
     target_date = market_date - timedelta(days=1)
+    
+    # Adjust target_date to previous business day if it falls on a weekend
+    # This prevents attempting to archive weekend data when exclude_weekends=True
+    target_datetime = _jst_datetime(target_date)
+    if not is_business_day(target_datetime):
+        # If Saturday (5), go back 1 day; if Sunday (6), go back 2 days
+        days_back = 2 if target_date.weekday() == 6 else 1
+        target_date = target_date - timedelta(days=days_back)
+        print(f"[INFO] Adjusted target_date to previous business day: {target_date}")
+    
     start_jst = _jst_datetime(target_date - timedelta(days=1))
     end_jst = _jst_datetime(market_date)
-
-    dest_dir = data_manager.get_daily_ohlc_dir(target_date)
 
     for pair in pairs:
         try:
