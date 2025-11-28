@@ -19,7 +19,7 @@ def temp_reports_dir(tmp_path):
 
 @pytest.fixture
 def sample_analysis_data():
-    """Sample analysis data matching schema_version=2."""
+    """Sample analysis data matching schema_version=2.1."""
     return {
         "pair": "USDJPY",
         "interval": "1h",
@@ -44,7 +44,7 @@ def sample_analysis_data():
             "200": {"latest": 147.0, "reaction": "none", "reaction_bars_ago": None},
         },
         "generated_at": "2025-11-25T08:00:00+09:00",
-        "schema_version": 2,
+        "schema_version": 2.1,
     }
 
 
@@ -187,7 +187,8 @@ def test_consolidate_pair_analyses_complete_data(mock_jst_now, temp_reports_dir,
     summary = sc.consolidate_pair_analyses("USDJPY", analysis_files)
 
     assert summary.pair == "USDJPY"
-    assert summary.schema_version == 2
+    # Consolidated summaries now use schema_version 2.1 to mirror upstream analysis files
+    assert summary.schema_version == 2.1
     assert summary.generated_at == "2025-11-25T10:00:00+09:00"
     assert len(summary.timeframes) == 3
     assert "1h" in summary.timeframes
@@ -196,7 +197,8 @@ def test_consolidate_pair_analyses_complete_data(mock_jst_now, temp_reports_dir,
     assert summary.metadata["total_timeframes"] == 3
     assert summary.metadata["missing_timeframes"] == []
     assert len(summary.metadata["source_files"]) == 3
-    assert summary.metadata["consolidation_version"] == "1.1.0"
+    # Consolidation logic has been bumped to 1.2.0; metadata should expose this version
+    assert summary.metadata["consolidation_version"] == "1.2.0"
 
 
 @patch('fx_kline.core.summary_consolidator.get_jst_now')
@@ -272,7 +274,7 @@ def test_consolidated_summary_to_dict():
 
     summary = sc.ConsolidatedSummary(
         pair="USDJPY",
-        schema_version=2,
+        schema_version=2.1,
         generated_at="2025-11-25T10:00:00+09:00",
         timeframes={"1h": tf_1h},
         metadata={"source_files": ["USDJPY_1h_10d_analysis.json"], "total_timeframes": 1},
@@ -281,7 +283,7 @@ def test_consolidated_summary_to_dict():
     result_dict = summary.to_dict()
 
     assert result_dict["pair"] == "USDJPY"
-    assert result_dict["schema_version"] == 2
+    assert result_dict["schema_version"] == 2.1
     assert result_dict["generated_at"] == "2025-11-25T10:00:00+09:00"
     assert "1h" in result_dict["timeframes"]
     assert result_dict["timeframes"]["1h"]["interval"] == "1h"
@@ -312,7 +314,7 @@ def test_consolidated_summary_to_dict_metadata_immutability():
 
     summary = sc.ConsolidatedSummary(
         pair="USDJPY",
-        schema_version=2,
+        schema_version=2.1,
         generated_at="2025-11-25T10:00:00+09:00",
         timeframes={"1h": tf_1h},
         metadata=original_metadata.copy(),
@@ -351,7 +353,7 @@ def test_write_summary(tmp_path):
 
     summary = sc.ConsolidatedSummary(
         pair="USDJPY",
-        schema_version=2,
+        schema_version=2.1,
         generated_at="2025-11-25T10:00:00+09:00",
         timeframes={"1h": tf_1h},
         metadata={"source_files": ["USDJPY_1h_10d_analysis.json"], "total_timeframes": 1},
@@ -369,7 +371,7 @@ def test_write_summary(tmp_path):
         data = json.load(fp)
 
     assert data["pair"] == "USDJPY"
-    assert data["schema_version"] == 2
+    assert data["schema_version"] == 2.1
     assert "1h" in data["timeframes"]
 
 

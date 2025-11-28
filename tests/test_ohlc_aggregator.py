@@ -49,7 +49,8 @@ def test_analyze_dataframe_produces_schema():
     assert result["rsi"] is not None
     assert result["atr"] is not None
     assert result["average_volatility"] == pytest.approx(1.5, rel=1e-3)
-    assert result["schema_version"] == 2
+    # Schema version 2.1 reflects the current JSON contract used in real summaries
+    assert result["schema_version"] == 2.1
     assert "sma" in result and "ema" in result
     assert set(result["sma"].keys()) >= {"5", "13", "21", "ordering"}
     assert set(result["ema"].keys()) >= {"25", "75", "90", "200"}

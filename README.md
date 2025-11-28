@@ -181,7 +181,7 @@ python main.py
 
 #### MCPサーバー
 
-[MCP_SETUP.md](./MCP_SETUP.md) の詳細ガイドを参照してください。
+[docs/MCP_SETUP.md](./docs/MCP_SETUP.md) の詳細ガイドを参照してください。
 
 ---
 
@@ -275,7 +275,7 @@ uv sync --extra mcp
 > 例: macOS/Linuxの場合 `/Users/username/projects/FX-Kline/run_mcp_server.py`
 > 例: Windowsの場合 `C:\Users\username\projects\FX-Kline\run_mcp_server.py`
 
-詳細なセットアップ手順とユースケースは **[MCP_SETUP.md](./MCP_SETUP.md)** を参照してください。
+詳細なセットアップ手順とユースケースは **[docs/MCP_SETUP.md](./docs/MCP_SETUP.md)** を参照してください。
 
 ### 🛠️ 実装済みMCPツール
 
@@ -299,7 +299,7 @@ uv sync --extra mcp
 | `list_available_pairs` | `list_pairs` |
 | `list_available_timeframes` | `list_timeframes` |
 
-> 📖 移行ガイドは **[MIGRATION.md](./MIGRATION.md)** を参照してください。
+> 📖 移行ガイドは **[docs/MIGRATION.md](./docs/MIGRATION.md)** を参照してください。
 
 #### MCP 2025仕様対応 ✨
 
@@ -348,7 +348,11 @@ fx-kline/
 ├── test_mcp_tools.py              # MCPツールテスト
 ├── pyproject.toml                 # プロジェクト設定
 ├── README.md                      # このファイル
-└── MCP_SETUP.md                   # MCPセットアップガイド
+├── AGENTS.md                      # 開発ガイドライン
+└── docs/                          # ドキュメント
+    ├── MCP_SETUP.md               # MCPセットアップガイド
+    ├── MIGRATION.md                # 移行ガイド
+    └── SOW.md                     # 仕様書
 ```
 
 ### アーキテクチャの特徴

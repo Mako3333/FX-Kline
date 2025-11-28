@@ -4,13 +4,13 @@ Debug actual fetch with detailed logging to understand the issue
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import yfinance as yf
 import pandas as pd
-from src.fx_kline.core.timezone_utils import convert_dataframe_to_jst
-from src.fx_kline.core.business_days import filter_business_days_fx
-from src.fx_kline.core.validators import validate_currency_pair
+from fx_kline.core.timezone_utils import convert_dataframe_to_jst
+from fx_kline.core.business_days import filter_business_days_fx
+from fx_kline.core.validators import validate_currency_pair
 
 def debug_single_fetch_detailed(pair, interval, period):
     """Detailed debug of a single fetch operation"""

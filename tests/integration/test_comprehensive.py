@@ -5,7 +5,7 @@ Tests both FX pairs and Gold Futures
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from fx_kline.core import fetch_single_ohlc, fetch_batch_ohlc_sync, OHLCRequest
 from datetime import datetime

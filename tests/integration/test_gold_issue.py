@@ -4,7 +4,7 @@ Test to diagnose GC=F (Gold Futures) data fetching issue
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from fx_kline.core import fetch_single_ohlc
 from datetime import datetime
