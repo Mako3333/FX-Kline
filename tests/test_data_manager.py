@@ -28,3 +28,19 @@ def test_get_daily_summaries_dir_creates_directory(monkeypatch, tmp_path):
     assert summaries_dir.exists()
     assert summaries_dir.is_dir()
     assert summaries_dir == tmp_path / "data" / "2025" / "11" / "28" / "summaries"
+
+
+def test_get_daily_ohlc_dir_creates_directory(monkeypatch, tmp_path):
+    monkeypatch.setattr(data_manager, "get_data_root", lambda: tmp_path / "data")
+    target_date = date(2025, 11, 28)
+    ohlc_dir = data_manager.get_daily_ohlc_dir(target_date)
+    assert ohlc_dir.exists()
+    assert ohlc_dir.is_dir()
+    assert ohlc_dir == tmp_path / "data" / "2025" / "11" / "28" / "ohlc"
+
+
+def test_get_daily_ohlc_filepath(monkeypatch, tmp_path):
+    monkeypatch.setattr(data_manager, "get_data_root", lambda: tmp_path / "data")
+    target_date = date(2025, 11, 28)
+    path = data_manager.get_daily_ohlc_filepath(target_date, "USDJPY", "15m")
+    assert path == tmp_path / "data" / "2025" / "11" / "28" / "ohlc" / "USDJPY_15m.csv"

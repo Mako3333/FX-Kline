@@ -131,6 +131,37 @@ def _count_unique_business_days(df: pd.DataFrame) -> int:
         return len(set(normalized))
 
 
+def fetch_ohlc_range_dataframe(
+    pair: str,
+    interval: str,
+    start: datetime,
+    end: datetime,
+    exclude_weekends: bool = True,
+) -> pd.DataFrame:
+    """
+    Fetch OHLC data for a specific start/end window, returned as a JST-indexed DataFrame.
+    """
+    pair_formatted = validate_currency_pair(pair)
+    interval_validated = validate_timeframe(interval)
+
+    start_utc = start.astimezone(timezone.utc)
+    end_utc = end.astimezone(timezone.utc)
+
+    df = yf.download(
+        pair_formatted,
+        interval=interval_validated,
+        start=start_utc,
+        end=end_utc,
+        auto_adjust=False,
+        progress=False,
+    )
+
+    if df.empty:
+        return df
+
+    return _prepare_dataframe(df, interval_validated, pair_formatted, exclude_weekends)
+
+
 def fetch_single_ohlc(
     pair: str,
     interval: str,

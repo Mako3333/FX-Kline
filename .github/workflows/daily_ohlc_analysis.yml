@@ -104,6 +104,10 @@ jobs:
           TZ=Asia/Tokyo
           echo "RUN_DATE=$(TZ=Asia/Tokyo date +%Y-%m-%d)" >> "$GITHUB_ENV"
 
+      - name: Archive previous day OHLC (15m)
+        run: |
+          uv run python scripts/archive_ohlc_for_day.py --market-date "$RUN_DATE"
+
       - name: Prepare daily data directory
         run: |
           uv run python scripts/prepare_daily_data.py --date "$RUN_DATE"

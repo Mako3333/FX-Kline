@@ -38,8 +38,28 @@ def get_daily_summaries_dir(day: date) -> Path:
     return target
 
 
+def get_daily_ohlc_dir(day: date) -> Path:
+    """
+    Path for OHLC archives under data/YYYY/MM/DD/ohlc.
+
+    Directory is created if it does not exist.
+    """
+    target = get_daily_data_dir(day) / "ohlc"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def get_daily_ohlc_filepath(day: date, pair: str, timeframe: str = "15m") -> Path:
+    """
+    File path for an OHLC CSV: data/YYYY/MM/DD/ohlc/{PAIR}_{timeframe}.csv
+    """
+    return get_daily_ohlc_dir(day) / f"{pair}_{timeframe}.csv"
+
+
 __all__ = [
     "get_data_root",
     "get_daily_data_dir",
     "get_daily_summaries_dir",
+    "get_daily_ohlc_dir",
+    "get_daily_ohlc_filepath",
 ]
