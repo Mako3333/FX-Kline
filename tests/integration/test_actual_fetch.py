@@ -2,7 +2,6 @@
 Test actual data fetching with the new FX business days filtering
 """
 
-import json
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

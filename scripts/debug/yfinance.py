@@ -18,3 +18,4 @@ print("\n" + "=" * 60)
 print("最後の5行（OHLCデータ）")
 print("=" * 60)
 print(df[['Open', 'High', 'Low', 'Close']].tail())
+
