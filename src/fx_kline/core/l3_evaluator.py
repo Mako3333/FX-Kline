@@ -31,7 +31,6 @@ import argparse
 import json
 import logging
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -266,7 +265,10 @@ def get_session_time_range(session: str) -> Tuple[int, int]:
         "LONDON": (16, 21),    # 16:00-21:00 JST
         "NY": (22, 6),         # 22:00-06:00 JST (crosses midnight)
     }
-    return session_ranges.get(session.upper(), (0, 24))
+    normalized = session.upper()
+    if normalized not in session_ranges:
+        logger.warning(f"Unknown session '{session}', defaulting to full day (0-24)")
+    return session_ranges.get(normalized, (0, 24))
 
 
 def filter_df_by_sessions(
@@ -351,21 +353,43 @@ def load_actual_outcome_from_summary(file_path: Path, pair: str) -> ActualOutcom
     """Load actual market outcome from OHLC summary JSON
 
     Args:
-        file_path: Path to ohlc_summary.json or similar
+        file_path: Path to ohlc_summary.json, {pair}_summary.json, or directory containing summaries
         pair: Currency pair to extract
 
     Returns:
         ActualOutcome object
+
+    Raises:
+        ValueError: If file not found or data missing
+        FileNotFoundError: If per-pair file not found in directory
     """
+    # If file_path is a directory, look for {pair}_summary.json
+    if file_path.is_dir():
+        pair_file = file_path / f"{pair}_summary.json"
+        if not pair_file.exists():
+            raise FileNotFoundError(
+                f"Summary file for {pair} not found in {file_path}. "
+                f"Expected: {pair_file}"
+            )
+        file_path = pair_file
+
     with file_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
+
+    # Verify pair matches if present in JSON
+    json_pair = data.get("pair")
+    if json_pair and json_pair != pair:
+        logger.warning(
+            f"Pair mismatch: requested {pair}, but JSON contains {json_pair}. "
+            f"Using data from {file_path}"
+        )
 
     # Assume ohlc_summary.json has timeframe-specific data
     timeframes = data.get("timeframes", {})
     daily_data = timeframes.get("1d", {})
 
     if not daily_data:
-        raise ValueError(f"No 1d timeframe data found for {pair}")
+        raise ValueError(f"No 1d timeframe data found for {pair} in {file_path}")
 
     open_price = daily_data.get("open", 0.0)
     high_price = daily_data.get("high", 0.0)
@@ -497,7 +521,6 @@ def calculate_pips_outcome(
         # Check if stop loss was hit
         if stop_loss and actual.low_price <= stop_loss:
             exit_price = stop_loss
-            stop_hit = True
         # Check if take profit was hit
         elif take_profit and actual.high_price >= take_profit:
             exit_price = take_profit
@@ -555,8 +578,8 @@ def evaluate_single_strategy(
 
     # Risk-reward realized
     rr_realized = None
-    if pips is not None and prediction.exit.stop_loss and prediction.entry.strict_limit:
-        entry = prediction.entry.strict_limit
+    entry = prediction.entry.strict_limit or prediction.entry.zone_min
+    if pips is not None and prediction.exit.stop_loss and entry is not None:
         pip_value = get_pip_value(prediction.pair)
         risk_pips = abs(entry - prediction.exit.stop_loss) / pip_value
         if risk_pips > 0:
@@ -768,7 +791,7 @@ class L3Evaluator:
         aggregated = calculate_aggregated_metrics(evaluations, self.mode)
 
         result = L3EvaluationResult(
-            date=datetime.now().strftime("%Y-%m-%d"),
+            date=get_jst_now().strftime("%Y-%m-%d"),
             mode=self.mode,
             schema_version=schema_version,
             strategy_evaluations=evaluations,
@@ -877,7 +900,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # Build result
         result = L3EvaluationResult(
-            date=datetime.now().strftime("%Y-%m-%d"),
+            date=get_jst_now().strftime("%Y-%m-%d"),
             mode=args.mode,
             schema_version=l3_pred.meta.get("schema_version", "2.3"),
             strategy_evaluations=evaluations,

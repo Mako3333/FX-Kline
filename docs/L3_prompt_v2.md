@@ -108,6 +108,8 @@
    - トレンド強度: 25%
    - サポレジ接近度: 20%
    - ファンダメンタル: 15%
+   
+   **計算式**: `confidence_score = 0.40 × technical_alignment + 0.25 × trend_strength + 0.20 × support_resistance_proximity + 0.15 × fundamental_alignment`
 
 3. **エントリーゾーン (Entry Zone)**:
    - v2.3スキーマでは `entry.zone_min`, `entry.zone_max`, `entry.strict_limit` を使用
@@ -130,8 +132,9 @@
 
 7. **代替シナリオ (Alternative Scenario)**:
    - 常に「次善のシナリオ」を提供すること
-   - 確率を見積もること (メイン予測と合わせて 1.0 になるように)
+   - 確率を見積もること。**必須要件**: `confidence_score + alternative_scenario.probability = 1.0`（許容誤差: ±0.01）
    - リスク管理のために使用される
+   - **バリデーション**: JSONスキーマ検証後、確率の合計が1.0であることを確認すること（不一致はセマンティックエラーとして扱う）
 
 **重要事項**:
 - 人間の好み、リスク許容度、トレードスタイルは考慮しないこと
@@ -383,6 +386,7 @@ XAUUSD (Gold):
   * ☐ イベント接近フラグあり → **WAIT** が出力されるか
   * ☐ 確信度スコアの計算 → ガイドラインと一致しているか
   * ☐ JSONスキーマの検証 → 有効なJSONか
+  * ☐ **確率の合計チェック**: `confidence_score + alternative_scenario.probability = 1.0` が成立しているか（許容誤差: ±0.01）
 
 ### 2\. 確信度のキャリブレーション確認
 
@@ -445,6 +449,7 @@ cat data/2025-11-27/L4_ai_evaluation.json
   * ✔ 実現pipsの計算（もしトレードしていたら）
   * ✔ 確信度の誤差（Calibration Error）測定
   * ✔ 市場レジームごとの分類
+  * ✔ **確率の合計バリデーション**: `confidence_score + alternative_scenario.probability` が 1.0 に等しいことを検証（不一致の場合はエラーとして記録）
 
 -----
 
@@ -468,7 +473,7 @@ claude_api_call.py \
   --l1 "${DATA_DIR}/L1_fundamental.md" \
   --l2 "${DATA_DIR}/L2_technical.md" \
   --output "${DATA_DIR}/L3_prediction.json" \
-  --prompt docs/memo.md
+  --prompt docs/L3_prompt_v2.md
 
 # 5. (翌日) L3 予測の評価
 # これはcron経由で翌日に自動実行される

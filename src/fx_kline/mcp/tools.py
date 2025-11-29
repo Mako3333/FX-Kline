@@ -156,8 +156,11 @@ def _fetch_ohlc_with_interval_validation(
         Dictionary containing OHLC data or error information
     """
     try:
+        # Normalize interval to lowercase for consistent validation and usage
+        normalized_interval = interval.lower()
+        
         # Validate interval is appropriate for this tool
-        if interval.lower() not in valid_intervals:
+        if normalized_interval not in valid_intervals:
             error_type = "ValidationError"
             valid_intervals_str = ", ".join(sorted(valid_intervals))
 
@@ -188,7 +191,7 @@ def _fetch_ohlc_with_interval_validation(
             return _normalize_datetime(result)
 
         # Fetch data using common code path
-        request = OHLCRequest(pair=pair, interval=interval, period=period)
+        request = OHLCRequest(pair=pair, interval=normalized_interval, period=period)
         response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
 
         if response.total_succeeded > 0:
