@@ -9,22 +9,20 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = PROJECT_ROOT / "src"
-SCRIPTS_PATH = PROJECT_ROOT / "scripts"
 
-for p in (SRC_PATH, SCRIPTS_PATH):
-    if str(p) not in sys.path:
-        sys.path.insert(0, str(p))
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
 
-from fx_kline.analyst import data_manager  # noqa: E402
-from fx_kline.analyst.l3_evaluator import L3Evaluator  # noqa: E402
-import run_l3_evaluation  # noqa: E402
+from fx_kline.core import l3_evaluator  # noqa: E402
 
 
-def _write_prediction(tmp_path: Path, pred_date: date):
-    pred_dir = data_manager.get_daily_data_dir(pred_date)
-    pred_dir.mkdir(parents=True, exist_ok=True)
+def _write_prediction(base_dir: Path, pred_date: date) -> Path:
+    base_dir.mkdir(parents=True, exist_ok=True)
     payload = {
-        "meta": {"version": "1.0", "generated_at": f"{pred_date} 09:00:00 JST"},
+        "meta": {
+            "schema_version": "2.3",
+            "generated_at": f"{pred_date} 09:00:00 JST",
+        },
         "market_environment": {"USDJPY": {"bias": "BULLISH", "vol_expect": "MEDIUM"}},
         "ranking": {"top_3": ["USDJPY"], "bottom_3": ["USDJPY"]},
         "strategies": [
@@ -32,144 +30,144 @@ def _write_prediction(tmp_path: Path, pred_date: date):
                 "pair": "USDJPY",
                 "rank": 1,
                 "strategy_type": "DIP_BUY",
+                "direction": "LONG",
                 "valid_sessions": ["TOKYO"],
-                "entry": {"zone_min": 100.0, "zone_max": 101.0, "strict_limit": 100.5},
-                "exit": {"take_profit": 102.0, "stop_loss": 99.5, "invalidation": 99.0},
+                "entry": {"zone_min": 149.0, "zone_max": 150.0, "strict_limit": 149.5},
+                "exit": {"take_profit": 151.0, "stop_loss": 148.0, "invalidation": 147.5},
+                "confidence_score": 0.7,
             }
         ],
     }
-    (pred_dir / "L3_prediction.json").write_text(json.dumps(payload), encoding="utf-8")
+    out_path = base_dir / "L3_prediction.json"
+    out_path.write_text(json.dumps(payload), encoding="utf-8")
+    return out_path
 
 
-def _write_summary(tmp_path: Path, pred_date: date):
-    summaries_dir = data_manager.get_daily_summaries_dir(pred_date)
+def _write_summary(base_dir: Path, market_date: date) -> Path:
+    base_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "pair": "USDJPY",
-        "timeframes": {"1d": {"atr": 2.0}},
+        "timeframes": {
+            "1d": {
+                "open": 150.0,
+                "high": 151.2,
+                "low": 148.9,
+                "close": 150.8,
+                "atr": 0.9,
+                "data_timestamp": f"{market_date}T23:59:00+09:00",
+            }
+        },
     }
-    summaries_dir.mkdir(parents=True, exist_ok=True)
-    (summaries_dir / "USDJPY_summary.json").write_text(json.dumps(payload), encoding="utf-8")
+    out_path = base_dir / "ohlc_summary.json"
+    out_path.write_text(json.dumps(payload), encoding="utf-8")
+    return out_path
 
 
-def _write_ohlc(tmp_path: Path, pred_date: date):
-    ohlc_dir = data_manager.get_daily_ohlc_dir(pred_date)
+def test_cli_main_writes_evaluation_json(tmp_path):
+    pred_date = date(2025, 11, 29) - timedelta(days=1)
+    prediction_path = _write_prediction(tmp_path / "prediction", pred_date)
+    actual_path = _write_summary(tmp_path / "actual", pred_date + timedelta(days=1))
+    output_path = tmp_path / "output" / "L3_evaluation.json"
+
+    exit_code = l3_evaluator.main(
+        [
+            "--mode",
+            "ai",
+            "--prediction",
+            str(prediction_path),
+            "--actual",
+            str(actual_path),
+            "--output",
+            str(output_path),
+        ]
+    )
+    assert exit_code == 0
+    assert output_path.exists()
+
+    result = json.loads(output_path.read_text(encoding="utf-8"))
+    assert result["aggregated_metrics"]["total_strategies"] == 1
+    assert result["strategy_evaluations"][0]["metrics"]["direction_correct"] is True
+
+
+def test_l3_evaluator_runs_with_market_data():
+    pred_date = date(2025, 11, 28)
+    l3_json = {
+        "meta": {"schema_version": "2.3", "generated_at": f"{pred_date} 09:00:00 JST"},
+        "market_environment": {},
+        "ranking": {},
+        "strategies": [
+            {
+                "pair": "USDJPY",
+                "rank": 1,
+                "strategy_type": "DIP_BUY",
+                "direction": "LONG",
+                "valid_sessions": ["TOKYO"],
+                "entry": {"zone_min": 149.0, "zone_max": 150.0, "strict_limit": 149.5},
+                "exit": {"take_profit": 151.0, "stop_loss": 148.0},
+                "confidence_score": 0.6,
+            }
+        ],
+    }
     idx = pd.date_range(f"{pred_date} 09:00", periods=3, freq="15min", tz="Asia/Tokyo")
     df = pd.DataFrame(
         {
-            "datetime": idx,
-            "open": [100.0, 100.6, 101.0],
-            "high": [100.8, 101.2, 101.5],
-            "low": [99.8, 100.4, 100.9],
-            "close": [100.7, 101.0, 101.4],
+            "open": [149.5, 149.8, 150.6],
+            "high": [149.9, 150.7, 151.1],
+            "low": [149.2, 149.6, 150.1],
+            "close": [149.8, 150.6, 151.0],
             "volume": [1000, 900, 800],
-        }
-    )
-    ohlc_dir.mkdir(parents=True, exist_ok=True)
-    df.to_csv(ohlc_dir / "USDJPY_15m.csv", index=False)
-
-
-def test_run_l3_evaluation_produces_output(monkeypatch, tmp_path):
-    monkeypatch.setattr(data_manager, "get_data_root", lambda: tmp_path / "data")
-
-    target_date = date(2025, 11, 29)
-    pred_date = target_date - timedelta(days=1)
-
-    _write_prediction(tmp_path, pred_date)
-    _write_summary(tmp_path, pred_date)
-    _write_ohlc(tmp_path, pred_date)
-
-    exit_code = run_l3_evaluation.main(["--target-date", target_date.strftime("%Y-%m-%d")])
-    assert exit_code == 0
-
-    out_path = data_manager.get_daily_data_dir(target_date) / "L3_evaluation.json"
-    assert out_path.exists()
-
-
-def test_evaluator_runs_with_minimal_inputs():
-    pred_date = date(2025, 11, 28)
-    l3_json = {
-        "meta": {"version": "1.0", "generated_at": f"{pred_date} 09:00:00 JST"},
-        "market_environment": {"USDJPY": {"bias": "BULLISH", "vol_expect": "MEDIUM"}},
-        "ranking": {"top_3": ["USDJPY"], "bottom_3": ["USDJPY"]},
-        "strategies": [],
-    }
-    idx = pd.date_range(f"{pred_date} 09:00", periods=2, freq="15min", tz="Asia/Tokyo")
-    df = pd.DataFrame(
-        {
-            "open": [100.0, 100.5],
-            "high": [100.4, 100.8],
-            "low": [99.8, 100.2],
-            "close": [100.3, 100.7],
-            "volume": [10, 11],
         },
         index=idx,
     )
-    evaluator = L3Evaluator(l3_json, {"USDJPY": df}, {"USDJPY": 1.0})
+
+    evaluator = l3_evaluator.L3Evaluator(l3_json, {"USDJPY": df}, {"USDJPY": 0.9})
     results = evaluator.run()
-    assert "environment" in results
-    assert "strategies" in results
+
+    assert results["aggregated_metrics"]["total_strategies"] == 1
+    assert results["strategy_evaluations"][0]["actual"]["close_price"] == 151.0
+    assert results["strategy_evaluations"][0]["metrics"]["entry_hit"] is True
 
 
-def _make_evaluator_with_schema(schema_version: str | None) -> L3Evaluator:
-    pred_date = date(2025, 11, 28)
-    meta: dict[str, object] = {
-        "version": "1.0",
-        "generated_at": f"{pred_date} 09:00:00 JST",
-    }
-    if schema_version is not None:
-        meta["schema_version"] = schema_version
-
-    l3_json = {
-        "meta": meta,
-        "market_environment": {},
-        "ranking": {},
-        "strategies": [],
-    }
-    return L3Evaluator(l3_json, market_data={}, atr_data={})
-
-
-def test_resolve_direction_new_schema_valid_combinations():
-    evaluator = _make_evaluator_with_schema("2.2")
-
-    # DIP_BUY + LONG
-    direction, status = evaluator._resolve_direction(
-        {"strategy_type": "DIP_BUY", "direction": "LONG"}
+def test_evaluate_direction_accuracy_handles_wait_and_moves():
+    up_actual = l3_evaluator.ActualOutcome(
+        pair="USDJPY",
+        open_price=150.0,
+        high_price=151.0,
+        low_price=149.5,
+        close_price=150.8,
+        period_return=(150.8 - 150.0) / 150.0,
+        volatility=0.9,
     )
-    assert direction == "LONG"
-    assert status == "OK"
-
-    # RALLY_SELL + SHORT
-    direction, status = evaluator._resolve_direction(
-        {"strategy_type": "RALLY_SELL", "direction": "SHORT"}
+    down_actual = l3_evaluator.ActualOutcome(
+        pair="USDJPY",
+        open_price=150.0,
+        high_price=150.2,
+        low_price=149.0,
+        close_price=149.2,
+        period_return=(149.2 - 150.0) / 150.0,
+        volatility=0.9,
     )
-    assert direction == "SHORT"
-    assert status == "OK"
-
-
-def test_resolve_direction_new_schema_mismatch_and_requires():
-    evaluator = _make_evaluator_with_schema("2.2")
-
-    # DIP_BUY に対して SHORT はミスマッチ
-    direction, status = evaluator._resolve_direction(
-        {"strategy_type": "DIP_BUY", "direction": "SHORT"}
+    flat_actual = l3_evaluator.ActualOutcome(
+        pair="USDJPY",
+        open_price=150.0,
+        high_price=150.1,
+        low_price=149.9,
+        close_price=150.1,
+        period_return=(150.1 - 150.0) / 150.0,
+        volatility=0.9,
     )
-    assert direction is None
-    assert status == "DIRECTION_MISMATCH"
 
-    # BREAKOUT で direction 不在は REQUIRES_DIRECTION
-    direction, status = evaluator._resolve_direction(
-        {"strategy_type": "BREAKOUT"}
+    long_pred = l3_evaluator.StrategyPrediction(
+        pair="USDJPY", rank=1, strategy_type="DIP_BUY", direction="LONG"
     )
-    assert direction is None
-    assert status == "REQUIRES_DIRECTION"
-
-
-def test_resolve_direction_old_schema_inferred_from_type():
-    # 旧スキーマ（2.2 未満 or 未指定）かつ direction なしの場合は推論
-    evaluator = _make_evaluator_with_schema("2.1")
-
-    direction, status = evaluator._resolve_direction(
-        {"strategy_type": "DIP_BUY"}
+    short_pred = l3_evaluator.StrategyPrediction(
+        pair="USDJPY", rank=1, strategy_type="RALLY_SELL", direction="SHORT"
     )
-    assert direction == "LONG"
-    assert status == "INFERRED_FROM_TYPE"
+    wait_pred = l3_evaluator.StrategyPrediction(
+        pair="USDJPY", rank=1, strategy_type="BREAKOUT", direction="WAIT"
+    )
+
+    assert l3_evaluator.evaluate_direction_accuracy(long_pred, up_actual) is True
+    assert l3_evaluator.evaluate_direction_accuracy(short_pred, down_actual) is True
+    assert l3_evaluator.evaluate_direction_accuracy(wait_pred, flat_actual) is True
+    assert l3_evaluator.evaluate_direction_accuracy(long_pred, down_actual) is False

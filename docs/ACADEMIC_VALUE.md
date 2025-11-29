@@ -1,590 +1,290 @@
-# FX HITL Trading System - Academic Value & Research Potential
+# FX HITL Trading System - Research Value & Knowledge Assets
 
-## 📚 エグゼクティブサマリー
+## 📚 概要
 
-このHITL（Human-in-the-Loop）トレーディングシステムは、**実務的な価値**だけでなく、**学術研究としての高い価値**も持っています。本ドキュメントでは、査読付き論文として発表可能な研究トピック、方法論、期待される学術的貢献について詳述します。
+このドキュメントは、FX HITLトレーディングシステムの**研究的価値**と**知識資産化**の方針を定義します。
 
----
-
-## 🎓 学術的価値の概要
-
-### なぜこのシステムが学術的に重要か
-
-1. **Human-AI協働の定量化**: AIと人間の協働がどの局面で価値を生むかを定量評価
-2. **階層的意思決定モデル**: L1（ファンダ）→ L2（テクニカル）→ L3（統合）→ L4（HITL）→ L5（振り返り）の構造化プロセス
-3. **実世界データ**: 実際の市場データと実トレード結果に基づく検証
-4. **再現可能性**: 透明なプロセスとオープンソースコードによる追試可能性
+本システムの学術的ユニークさは、**「n=1 縦断研究」**にあります。
+単なるバックテストや集計データではなく、**1人のトレーダーの意思決定プロセス・感情・AI活用の変遷を、構造化されたデータとして蓄積する**点が最大の差別化要因です。
 
 ---
 
-## 📝 研究トピック候補
+## 🎯 研究価値の核心
 
-### 1. Human-AI Collaboration in Financial Decision Making
+### 1. n=1 縦断研究としてのユニーク性
 
-#### 研究課題（Research Questions）
-
-**RQ1**: AIの予測に対する人間の介入は、どの市場環境で最も価値を生むか？
-
-- **仮説**: ファンダメンタルリスクイベント（経済指標、地政学リスク）の局面で、人間の介入が最も効果的
-- **検証方法**: L3（AI単体）と L4（HITL）の市場環境別パフォーマンス比較
-- **期待される結果**: CHOPPY市場やリスクイベント前では、HITLが顕著に優れる
-
-**RQ2**: 人間の介入タイプ（保守的調整、積極的調整、見送り判断）は、どのような成功率を示すか？
-
-- **仮説**: リスク削減型の介入は高成功率（80%+）、積極的調整は低成功率（50%前後）
-- **検証方法**: L4での介入タイプ分類と事後評価
-- **期待される結果**: 介入タイプごとの成功率プロファイルが明確に異なる
-
-**RQ3**: AIの確信度スコアは、実際の予測精度とどの程度相関するか？（キャリブレーション）
-
-- **仮説**: 現状のLLMベースAIは過信傾向があり、確信度 > 実際の的中率
-- **検証方法**: 確信度スコアと実際の的中率の散布図分析
-- **期待される結果**: 初期は過信、フィードバック学習により改善
-
-#### 方法論（Methodology）
+従来の金融研究は「多数のトレーダー × 短期間」のクロスセクション分析が主流。
+本システムは逆のアプローチ：
 
 ```
-研究デザイン: 準実験デザイン（Quasi-experimental Design）
-
-対照群: L3（AIのみの予測）
-実験群: L4（Human-in-the-Loop）
-
-サンプルサイズ: 最低100トレード（統計的有意性確保）
-期間: 6ヶ月以上
-
-評価指標:
-- Primary: シャープレシオの差（L4 - L3）
-- Secondary: 勝率、プロフィットファクター、最大ドローダウン
+従来研究: 100人 × 1ヶ月 = 外部観察データ
+本システム: 1人 × 12ヶ月+ = 内部プロセスデータ
 ```
 
-#### 予想される学術的貢献
+**記録できるもの（他では得られないデータ）:**
 
-- **理論的貢献**: Human-AI協働における「人間の付加価値」の定量化フレームワーク
-- **実務的貢献**: 金融機関におけるAIトレーディングシステムの設計指針
-- **方法論的貢献**: 少数サンプルでの統計的検証手法（疑似バックテスト）
+| データ種別 | 従来研究 | 本システム |
+|-----------|---------|-----------|
+| エントリー/イグジット価格 | ✅ | ✅ |
+| 損益 (pips/金額) | ✅ | ✅ |
+| **判断の理由** | ❌ | ✅ |
+| **AIの提案と人間の修正履歴** | ❌ | ✅ |
+| **感情状態（FOMO, 疲れ等）** | ❌ | ✅ |
+| **ルール遵守/違反の記録** | ❌ | ✅ |
+| **AI確信度 vs 実際の的中率** | ❌ | ✅ |
 
-#### 投稿候補ジャーナル
+### 2. AI-Human協働の定量化
 
-**Tier 1**:
-- *Journal of Finance*
-- *Management Science*
-- *Journal of Financial Economics*
+本システムの設計上、**AI単体（L3）と人間+AI（L4）を同じ評価エンジンで比較**できます。
 
-**Tier 2**:
-- *Quantitative Finance*
-- *Journal of Financial Markets*
-- *Algorithmic Finance*
+これにより以下の問いに答えられる：
 
-**学際系**:
-- *ACM Transactions on Economics and Computation*
-- *Decision Support Systems*
-- *Expert Systems with Applications*
+- **RQ1**: どの市場環境で人間の介入が価値を生むか？
+- **RQ2**: 人間の介入タイプ（保守的/積極的/見送り）と成功率の関係は？
+- **RQ3**: AIの確信度は実際の精度とどの程度一致するか（キャリブレーション）？
+
+### 3. キャリブレーション分析
+
+LLMベースの予測における**確信度の信頼性**は、未開拓の研究領域。
+
+```
+理想的なキャリブレーション:
+  確信度 80% → 実際の的中率 80%
+
+実際に起こりがちなパターン:
+  確信度 80% → 実際の的中率 55%（過信）
+```
+
+本システムでは `l3_evaluator.py` が `confidence_calibration` メトリクスを自動計算。
+データ蓄積により、以下が可視化される：
+
+- LLMの過信傾向の程度
+- 市場環境別のキャリブレーション差異
+- フィードバックによる改善の有無
 
 ---
 
-### 2. Calibration of AI Confidence in Forex Trading Predictions
+## 📊 データ収集と公開方針
 
-#### 研究課題（Research Questions）
-
-**RQ1**: LLMベースのトレーディングAIの確信度キャリブレーションはどの程度正確か？
-
-- **背景**: 従来のMLモデル（Random Forest、XGBoost）のキャリブレーション研究は存在するが、LLMの金融予測におけるキャリブレーションは未開拓
-- **新規性**: LLMの自然言語による確信度表現（「高い確信度」「やや不確実」等）の定量化
-
-**RQ2**: フィードバックループによるキャリブレーション改善は可能か？
-
-- **仮説**: L5振り返りの蓄積により、AIの確信度が徐々に実際の的中率に近づく
-- **検証方法**: 時系列でのキャリブレーション誤差の推移分析
-
-#### 方法論（Methodology）
+### 収集するデータ
 
 ```
-キャリブレーションプロット:
-- X軸: AIの確信度スコア（0.0-1.0）
-- Y軸: 実際の的中率
-
-理想的なキャリブレーション: y = x（対角線）
-
-キャリブレーション誤差:
-ECE (Expected Calibration Error) = Σ |confidence - accuracy|
+data/YYYY/MM/DD/
+├── L1_fundamental.md      # ファンダメンタル分析
+├── L2_technical.md        # テクニカル分析
+├── L3_prediction.json     # AI予測（v2.3スキーマ）
+├── L4_tradeplan.json      # HITLプラン
+├── L3_evaluation.json     # AI評価結果
+├── L4_evaluation.json     # HITL評価結果
+├── L5_review.yaml         # 日次レビュー
+└── trades/
+    └── {trade_id}/
+        └── trade.yaml     # 個別トレードカルテ
 ```
 
-#### データ収集計画
+### 匿名化ルール
 
-```python
-@dataclass
-class CalibrationDataPoint:
-    """キャリブレーション分析用データポイント"""
-    date: str
-    pair: str
-    l3_prediction: str  # "LONG" | "SHORT" | "WAIT"
-    l3_confidence: float  # 0.0-1.0
-    l3_reasoning: str  # AIの判断理由（質的分析用）
-
-    actual_outcome: str  # "WIN" | "LOSS" | "NEUTRAL"
-    actual_pips: float
-
-    market_regime: str  # "TRENDING" | "RANGING" | "CHOPPY"
-    event_proximity: bool  # 経済指標前後24時間以内か
-```
-
-**必要サンプル数**: 各確信度区間（0-0.2, 0.2-0.4, ..., 0.8-1.0）に最低20サンプル
-→ 合計120サンプル以上
-
-#### 予想される学術的貢献
-
-- **理論的貢献**: LLMの確信度表現の信頼性に関する初の実証研究
-- **実務的貢献**: AIトレーディングシステムにおける確信度閾値の設定指針
-- **方法論的貢献**: 自然言語による確信度の定量化手法
-
-#### 投稿候補ジャーナル
-
-**AI/ML系**:
-- *Journal of Machine Learning Research*
-- *Neural Computation*
-- *Artificial Intelligence*
-
-**金融工学系**:
-- *Journal of Financial Data Science*
-- *Quantitative Finance*
-
-**学際系**:
-- *Nature Machine Intelligence*（ハイインパクト狙い）
-- *PLOS ONE*（オープンアクセス）
-
----
-
-### 3. Layered Decision Architecture for Hybrid Trading Systems
-
-#### 研究課題（Research Questions）
-
-**RQ1**: 階層的意思決定モデル（L1-L5）は、フラットなモデルと比較してどの程度優れるか？
-
-- **比較対象**:
-  - 提案モデル: L1（ファンダ）→ L2（テクニカル）→ L3（統合）→ L4（HITL）→ L5（振り返り）
-  - ベースライン: すべての情報を同時投入して判断
-
-**RQ2**: 各レイヤーの情報がどの程度最終判断に寄与しているか？
-
-- **分析手法**: Shapley値による寄与度分解
-- **期待結果**: L1（ファンダ）が40%、L2（テクニカル）が30%、L3-L4の統合が30%
-
-#### 方法論（Methodology）
-
-```
-A/Bテスト設計:
-
-グループA（階層モデル）: L1→L2→L3→L4
-グループB（フラットモデル）: すべての情報を同時投入
-
-評価期間: 3ヶ月
-サンプルサイズ: 各グループ50トレード以上
-
-仮説検定:
-H0: シャープレシオ_A = シャープレシオ_B
-H1: シャープレシオ_A > シャープレシオ_B
-
-有意水準: α = 0.05
-検定方法: Welch's t-test（分散不等を仮定）
-```
-
-#### アーキテクチャの理論的基盤
-
-**認知心理学との接続**:
-- Kahneman (2011) の二重過程理論（System 1 / System 2）との対応
-- L1-L2: System 2（熟慮的思考）
-- L3: System 1（直感的判断）
-- L4: System 2（批判的検証）
-
-**意思決定理論との接続**:
-- Simon (1956) の限定合理性（Bounded Rationality）
-- 人間の情報処理能力の限界を、階層化により補完
-
-#### 予想される学術的貢献
-
-- **理論的貢献**: 金融意思決定における階層的情報処理の有効性実証
-- **実務的貢献**: トレーディングシステムの設計パターンとしての提案
-- **学際的貢献**: 認知心理学と金融工学の融合
-
-#### 投稿候補ジャーナル
-
-**意思決定科学系**:
-- *Decision Sciences*
-- *Journal of Behavioral Decision Making*
-- *Organizational Behavior and Human Decision Processes*
-
-**金融系**:
-- *Journal of Financial Markets*
-- *Journal of Banking & Finance*
-
-**学際系**:
-- *Management Science*
-- *Information Systems Research*
-
----
-
-## 📊 データ公開とオープンサイエンス
-
-### 匿名化データの公開
-
-学術的価値を最大化するため、以下のデータをGitHubで公開することを推奨します。
-
-#### 公開するデータ
-
-```
-FX-HITL-Dataset/
-├── metadata.json          # データセット概要
-├── daily_reports/         # 日次レポート（匿名化済み）
-│   ├── 2025-11-01/
-│   │   ├── L1_fundamental.md
-│   │   ├── L2_technical.md
-│   │   ├── L3_prediction.json
-│   │   ├── L4_tradeplan.json
-│   │   ├── L4_evaluation.json
-│   │   └── L5_review.yaml
-│   └── ...
-├── aggregated_metrics/    # 集計メトリクス
-│   ├── monthly_summary.csv
-│   └── calibration_data.csv
-└── code/                  # 再現用コード
-    ├── l3_evaluator.py
-    ├── backtest_simulator.py
-    └── analysis_notebooks/
-```
-
-#### 匿名化ルール
-
-**公開OK**:
-- ✅ 相対パフォーマンス（シャープレシオ、勝率、プロフィットファクター）
-- ✅ pips単位の損益（金額は非公開）
-- ✅ 通貨ペア名
-- ✅ エントリー/エグジット価格
+**公開OK:**
+- ✅ 相対パフォーマンス（勝率、シャープレシオ、プロフィットファクター）
+- ✅ pips単位の損益
+- ✅ 通貨ペア名、エントリー/イグジット価格
 - ✅ すべてのテキストレポート（L1-L5）
+- ✅ AI確信度と実際の結果
 
-**公開NG**:
+**公開NG:**
 - ❌ 口座残高（絶対額）
 - ❌ ポジションサイズ（lots数）
 - ❌ ブローカー名
 - ❌ 個人を特定できる情報
 
-#### ライセンス
+### ライセンス
 
-**推奨ライセンス**:
-- データ: CC BY 4.0（クリエイティブコモンズ 表示 4.0）
-- コード: MIT License
-
-これにより、他の研究者が自由に使用・改変できる一方、引用は必須となります。
+- **データ**: CC BY 4.0（クリエイティブコモンズ 表示 4.0）
+- **コード**: MIT License
 
 ---
 
-## 🏆 学会発表の可能性
+## 🔬 研究アウトプットの現実的な目標
 
-### 国際会議
+### Phase 1: データ蓄積期（0-6ヶ月）
 
-**Tier 1（採択率 20-30%）**:
-- **ICML** (International Conference on Machine Learning)
-- **NeurIPS** (Neural Information Processing Systems)
-- **AAAI** (Association for the Advancement of Artificial Intelligence)
+**目標:**
+- 100トレード以上のデータ蓄積
+- L3 vs L4 の基本比較が可能な状態
 
-発表形式: Poster または Short Paper
-テーマ: "Human-AI Collaboration in Financial Forecasting"
+**アウトプット:**
+- note記事シリーズ（月次レポート）
+- X での日次/週次発信
+- GitHubでのデータ公開開始
 
-**Tier 2（採択率 30-40%）**:
-- **IJCAI** (International Joint Conference on Artificial Intelligence)
-- **AAMAS** (Autonomous Agents and Multi-Agent Systems)
-- **IC2S2** (International Conference on Computational Social Science)
+### Phase 2: 分析・発信期（6-12ヶ月）
 
-発表形式: Full Paper
-テーマ: "Layered Decision Architecture for Trading Systems"
+**目標:**
+- キャリブレーション分析の完了
+- 市場環境別のパフォーマンス分析
 
-### 国内会議
+**アウトプット:**
+- note有料記事（詳細分析）
+- Qiita/Zenn での技術記事
+- arXiv プレプリント（オプション）
 
-- **人工知能学会全国大会**（JSAI）
-- **金融・証券計量分析研究会**
-- **日本ファイナンス学会**
+### Phase 3: 拡張期（12ヶ月以降）
 
----
+**目標:**
+- 1年分のデータを用いた縦断分析
+- 「自分専用HITLトレーダー」の教師データ化
 
-## 📈 論文構成例
-
-### タイトル案
-
-**パターン1（Human-AI協働重視）**:
-"Human-in-the-Loop Trading: Quantifying the Value of Human Intervention in AI-Driven Forex Trading Systems"
-
-**パターン2（アーキテクチャ重視）**:
-"A Layered Decision Architecture for Hybrid Human-AI Trading Systems: Evidence from Foreign Exchange Markets"
-
-**パターン3（キャリブレーション重視）**:
-"Confidence Calibration in LLM-Based Financial Prediction: An Empirical Study of Forex Trading"
-
-### 論文構成（IMRaD形式）
-
-```markdown
-# Abstract (200-250 words)
-- 研究背景、目的、方法、主要結果、含意
-
-# 1. Introduction
-- 1.1 背景: AIトレーディングの現状と課題
-- 1.2 研究目的: Human-AI協働の定量化
-- 1.3 研究の新規性と貢献
-
-# 2. Related Work
-- 2.1 Algorithmic Trading
-- 2.2 Human-AI Collaboration
-- 2.3 Confidence Calibration in ML
-
-# 3. Methodology
-- 3.1 System Architecture (L1-L5)
-- 3.2 Data Collection
-- 3.3 Evaluation Metrics
-- 3.4 Statistical Analysis
-
-# 4. Results
-- 4.1 Overall Performance (L3 vs L4)
-- 4.2 Intervention Type Analysis
-- 4.3 Market Regime Analysis
-- 4.4 Confidence Calibration
-
-# 5. Discussion
-- 5.1 Interpretation of Results
-- 5.2 Theoretical Implications
-- 5.3 Practical Implications
-- 5.4 Limitations
-
-# 6. Conclusion
-- 主要発見のまとめ
-- 今後の研究方向
-
-# References
-# Appendix
-- A. Detailed System Prompt
-- B. Additional Statistical Tests
-- C. Code Availability
-```
+**アウトプット:**
+- 年次レポート
+- ファインチューニング実験
+- コミュニティへの知見共有
 
 ---
 
-## 📊 統計的厳密性の確保
+## 📝 発信チャネルと優先順位
 
-### 必要サンプルサイズの計算
+### Tier 1: 実務コミュニティ（最優先）
 
-```python
-from scipy.stats import ttest_ind
-from statsmodels.stats.power import tt_ind_solve_power
+| チャネル | 頻度 | 内容 |
+|---------|------|------|
+| **X** | 日次 | L3/L4比較結果、気づき |
+| **note** | 週次/月次 | 詳細分析、レビュー |
+| **GitHub** | 随時 | コード、データ、ドキュメント |
 
-# パラメータ設定
-effect_size = 0.5  # Cohen's d（中程度の効果量）
-alpha = 0.05       # 有意水準
-power = 0.80       # 検出力
+### Tier 2: 技術コミュニティ
 
-# 必要サンプルサイズ計算
-n_required = tt_ind_solve_power(
-    effect_size=effect_size,
-    alpha=alpha,
-    power=power,
-    alternative='larger'  # L4 > L3 を検証
-)
+| チャネル | 頻度 | 内容 |
+|---------|------|------|
+| **Qiita/Zenn** | 月1-2回 | 技術解説、実装ノウハウ |
+| **YouTube** | 月1回 | システム解説、運用レビュー |
 
-print(f"必要サンプルサイズ: {n_required:.0f} トレード/群")
-# 結果: 64トレード/群（合計128トレード）
-```
+### Tier 3: 学術コミュニティ（オプション）
 
-### 多重比較の補正
+| チャネル | 条件 | 内容 |
+|---------|------|------|
+| **arXiv** | 1年分データ蓄積後 | プレプリント |
+| **国内学会** | 興味があれば | 人工知能学会、金融研究会 |
 
-複数の仮説検定を行う場合、Bonferroni補正を適用：
-
-```python
-# 3つの市場レジーム（TRENDING, RANGING, CHOPPY）で検定
-n_tests = 3
-alpha_corrected = 0.05 / n_tests  # 0.0167
-
-# 各検定でp < 0.0167 なら有意
-```
-
-### ベイズ統計の活用
-
-サンプルサイズが限定的な場合、ベイズ統計も併用：
-
-```python
-import pymc3 as pm
-
-# ベイズt検定
-with pm.Model() as model:
-    # 事前分布
-    mu_l3 = pm.Normal('mu_l3', mu=0, sd=10)
-    mu_l4 = pm.Normal('mu_l4', mu=0, sd=10)
-
-    # 尤度
-    l3_returns = pm.Normal('l3', mu=mu_l3, sd=1, observed=l3_data)
-    l4_returns = pm.Normal('l4', mu=mu_l4, sd=1, observed=l4_data)
-
-    # 差の事後分布
-    diff = pm.Deterministic('diff', mu_l4 - mu_l3)
-
-    # MCMC推定
-    trace = pm.sample(2000, tune=1000)
-
-# 事後確率: P(L4 > L3 | data)
-prob_l4_better = (trace['diff'] > 0).mean()
-print(f"L4が優れている事後確率: {prob_l4_better:.2%}")
-```
+**注意**: Tier 1-2で十分な価値を生み出せる。Tier 3は「やれたらやる」レベル。
 
 ---
 
-## 🎓 学術的インパクトの最大化戦略
+## 📊 評価指標の定義
 
-### プレプリント公開
+### 定量指標（自動計算）
 
-**arXiv.org**:
-- カテゴリ: `q-fin.TR` (Trading and Market Microstructure)
-- サブカテゴリ: `cs.AI` (Artificial Intelligence)
-- 公開タイミング: データ収集完了後すぐ（ジャーナル投稿前）
+| 指標 | 説明 | 計算元 |
+|------|------|--------|
+| `direction_accuracy` | 方向性正解率 | l3_evaluator.py |
+| `entry_hit_rate` | エントリーゾーン到達率 | l3_evaluator.py |
+| `avg_confidence` | 平均確信度 | L3_prediction.json |
+| `confidence_calibration` | キャリブレーション誤差 | l3_evaluator.py |
+| `total_pips` | 合計pips | l3_evaluator.py |
+| `sharpe_ratio` | シャープレシオ | 月次集計 |
 
-**SSRN**:
-- 金融系の研究者に広くリーチ
-- ダウンロード数が可視化され、注目度が分かる
+### 定性指標（人間入力）
 
-### ソーシャルメディア活用
-
-**X (Twitter) での発信**:
-```
-🎓 新しい研究を公開しました！
-
-"Human-in-the-Loop Trading: Quantifying Human Value in AI Systems"
-
-主要発見:
-✅ HITLはAIのみより+35% Sharpe改善
-✅ リスクイベント時の人間介入が鍵
-✅ AIの確信度は過信傾向（要キャリブレーション）
-
-📄 Paper: [arXiv URL]
-💻 Code: [GitHub URL]
-
-#MachineLearning #Finance #HITL
-```
-
-**LinkedIn**:
-- 実務家へのアプローチ
-- 研究の実務的含意を強調
-
-### 共同研究者の募集
-
-**GitHub Issuesでの募集**:
-```markdown
-# Call for Collaboration
-
-We are seeking collaborators for:
-- Statistical analysis expertise
-- Behavioral economics perspective
-- Replication in other markets (stocks, crypto)
-
-Please contact: [email]
-```
+| 指標 | 説明 | 記録先 |
+|------|------|--------|
+| `rule_adherence` | ルール遵守度 | L5_review.yaml |
+| `emotion_impact` | 感情の影響 | L5_review.yaml |
+| `modification_quality` | 人間修正の質 | L4_tradeplan.json |
 
 ---
 
-## 📚 参考文献（論文執筆用）
+## 🎓 学術的フレームワーク（参考）
+
+本システムは以下の学術的概念と接続可能：
+
+### 認知心理学
+
+- **二重過程理論** (Kahneman, 2011)
+  - L1-L2: System 2（熟慮的思考）
+  - L3: System 1（直感的判断）
+  - L4: System 2（批判的検証）
+
+### 意思決定理論
+
+- **限定合理性** (Simon, 1956)
+  - 人間の情報処理能力の限界を、階層化とAI補助で補完
 
 ### Human-AI Collaboration
 
-1. Bansal, G., Nushi, B., Kamar, E., Lasecki, W. S., Weld, D. S., & Horvitz, E. (2019). Beyond accuracy: The role of mental models in human-AI team performance. *Proceedings of the AAAI Conference on Human Computation and Crowdsourcing*, 7(1), 2-11.
-
-2. Lai, V., & Tan, C. (2019). On human predictions with explanations and predictions of machine learning models: A case study on deception detection. *Proceedings of the Conference on Fairness, Accountability, and Transparency*, 29-38.
-
-### Algorithmic Trading
-
-3. Hendershott, T., Jones, C. M., & Menkveld, A. J. (2011). Does algorithmic trading improve liquidity?. *The Journal of Finance*, 66(1), 1-33.
-
-4. Cartea, Á., Jaimungal, S., & Penalva, J. (2015). *Algorithmic and high-frequency trading*. Cambridge University Press.
-
-### Confidence Calibration
-
-5. Guo, C., Pleiss, G., Sun, Y., & Weinberger, K. Q. (2017). On calibration of modern neural networks. *International Conference on Machine Learning*, 1321-1330.
-
-6. Kuleshov, V., Fenner, N., & Ermon, S. (2018). Accurate uncertainties for deep learning using calibrated regression. *International Conference on Machine Learning*, 2796-2804.
-
-### Forex Trading
-
-7. Lyons, R. K. (2001). *The microstructure approach to exchange rates*. MIT press.
-
-8. King, M. R., Osler, C. L., & Rime, D. (2013). The market microstructure approach to foreign exchange: Looking back and looking forward. *Journal of International Money and Finance*, 38, 95-119.
+- **Complementary Strengths**
+  - AI: パターン認識、一貫性、疲労なし
+  - 人間: コンテキスト理解、異常検知、リスク判断
 
 ---
 
-## 🌟 長期的な研究ロードマップ
+## 💡 長期ビジョン：教師データ化
 
-### Phase 1: 初期研究（6ヶ月）
-- ✅ データ収集（100トレード以上）
-- ✅ L3 vs L4 の基本比較
-- ✅ arXiv プレプリント公開
+本システムで蓄積されるデータは、将来的に以下の用途で活用可能：
 
-### Phase 2: 拡張研究（6-12ヶ月）
-- ✅ 他の通貨ペアへの拡張
-- ✅ 他の市場（株式、仮想通貨）での検証
-- ✅ ジャーナル投稿（Tier 2狙い）
+### 1. ファインチューニング素材
 
-### Phase 3: 発展研究（12-24ヶ月）
-- ✅ 機械学習モデルの統合
-- ✅ リアルタイムシステムの構築
-- ✅ 国際会議での発表（ICML/NeurIPS狙い）
+```
+入力: L1 + L2 + 市場環境
+出力: 最適なL3予測（過去の成功パターン学習）
+```
 
-### Phase 4: 社会実装（24ヶ月以降）
-- ✅ オープンソースプラットフォーム化
-- ✅ 金融機関との共同研究
-- ✅ 商用化の検討
+### 2. 自分専用HITLトレーダー
+
+```
+入力: AI提案 + 市場環境 + 過去の修正パターン
+出力: 「makoならこう修正する」予測
+```
+
+### 3. 意思決定支援システム
+
+```
+入力: 現在の状況
+出力: 「過去の類似ケースではこうだった」アドバイス
+```
 
 ---
 
-## 💡 倫理的配慮
+## ⚠️ 倫理的配慮
 
 ### 研究倫理
 
 - **データプライバシー**: 個人情報の完全匿名化
-- **再現可能性**: すべてのコードとデータを公開
+- **再現可能性**: コードとデータを公開
 - **利益相反**: 商用利用の有無を明示
 
-### 社会的影響
+### 社会的責任
 
-**ポジティブ**:
-- ✅ 個人投資家の意思決定支援
-- ✅ AIの透明性向上
-- ✅ Human-AI協働のベストプラクティス確立
-
-**リスク**:
-- ⚠️ 過度な依存による判断力低下
-- ⚠️ システムの悪用（詐欺的なトレード勧誘）
-- ⚠️ 市場の効率性への影響
-
-**対策**:
-- 論文内でLimitationsセクションを充実
-- 「教育目的」であることを明示
-- 投資助言ではない旨を強調
+- 本システムは**教育・研究目的**
+- **投資助言ではない**ことを明示
+- 過度な依存リスクへの注意喚起
 
 ---
 
-## 🎯 まとめ：学術的価値の最大化
+## 📚 参考文献（厳選）
 
-### 成功の鍵
+### Human-AI Collaboration
 
-1. **透明性**: すべてのプロセスを文書化・公開
-2. **再現可能性**: コードとデータをオープンに
-3. **統計的厳密性**: 十分なサンプルサイズと適切な検定
-4. **学際性**: 金融・AI・心理学の融合
-5. **社会的意義**: 実務への貢献を明確に
+1. Bansal, G., et al. (2019). Beyond accuracy: The role of mental models in human-AI team performance. *AAAI HCOMP*.
 
-### 期待される成果
+### Confidence Calibration
 
-- 📄 査読付き論文 1-2本（Tier 2以上）
-- 🎤 国際会議発表 2-3回
-- 🌟 GitHubスター 500以上
-- 📚 他研究者による引用 10件以上（3年以内）
-- 💼 金融機関からの共同研究オファー
+2. Guo, C., et al. (2017). On calibration of modern neural networks. *ICML*.
 
-このシステムは、**実務と学術の両面で価値を生む稀有なプロジェクト**です。適切にドキュメント化・公開することで、大きなインパクトを生み出せます。
+### Behavioral Finance
+
+3. Kahneman, D. (2011). *Thinking, Fast and Slow*. Farrar, Straus and Giroux.
+
+### Forex Market Microstructure
+
+4. King, M. R., et al. (2013). The market microstructure approach to foreign exchange. *Journal of International Money and Finance*.
 
 ---
 
-**最終更新**: 2025-11-28
-**バージョン**: 1.0
-**作成者**: Academic Advisory Team
+## 🕒 更新履歴
+
+| 日付 | バージョン | 変更内容 |
+|------|-----------|---------|
+| 2025-11-29 | 2.0 | 全面刷新：n=1研究の価値を中心に再構成 |
+| 2025-11-28 | 1.0 | 初版作成 |
+
+**メンテナー**: mako
+**ライセンス**: CC BY 4.0

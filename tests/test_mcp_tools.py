@@ -19,10 +19,11 @@ if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
 
 from fx_kline.mcp.tools import (  # noqa: E402
-    fetch_ohlc_tool,
-    fetch_ohlc_batch_tool,
-    list_available_pairs_tool,
-    list_available_timeframes_tool,
+    get_daily_ohlc,
+    get_intraday_ohlc,
+    get_ohlc_batch,
+    list_pairs,
+    list_timeframes,
 )
 
 
@@ -32,14 +33,14 @@ def test_list_available_pairs():
     print("Test 1: List Available Pairs")
     print("=" * 60)
 
-    result = list_available_pairs_tool(preset_only=True)
+    result = list_pairs(preset_only=True)
     print(f"Success: {result['success']}")
     print(f"Pairs: {result['pairs']}")
     print(f"Count: {result['count']}")
     print()
 
     assert result["success"], (
-        f"list_available_pairs_tool should succeed. Error: {result.get('error')}"
+        f"list_pairs should succeed. Error: {result.get('error')}"
     )
     assert result["count"] > 0, (
         f"Should have at least one currency pair. Got: {result.get('count')}"
@@ -52,14 +53,14 @@ def test_list_available_timeframes():
     print("Test 2: List Available Timeframes")
     print("=" * 60)
 
-    result = list_available_timeframes_tool(preset_only=True)
+    result = list_timeframes(preset_only=True)
     print(f"Success: {result['success']}")
     print(f"Timeframes: {result['timeframes']}")
     print(f"Count: {result['count']}")
     print()
 
     assert result["success"], (
-        f"list_available_timeframes_tool should succeed. Error: {result.get('error')}"
+        f"list_timeframes should succeed. Error: {result.get('error')}"
     )
     assert result["count"] > 0, (
         f"Should have at least one timeframe. Got: {result.get('count')}"
@@ -72,7 +73,7 @@ def test_fetch_ohlc():
     print("Test 3: Fetch Single OHLC (USDJPY, 1d, 5d)")
     print("=" * 60)
 
-    result = fetch_ohlc_tool(
+    result = get_daily_ohlc(
         pair="USDJPY",
         interval="1d",
         period="5d",
@@ -97,7 +98,7 @@ def test_fetch_ohlc():
 
     print()
     assert result["success"], (
-        f"fetch_ohlc_tool should succeed. Error: {result.get('error')}"
+        f"get_daily_ohlc should succeed. Error: {result.get('error')}"
     )
     if result["success"]:
         assert result["data"]["data_count"] > 0, (
@@ -116,7 +117,7 @@ def test_fetch_ohlc_batch():
         {"pair": "EURUSD", "interval": "1d", "period": "5d"},
     ]
 
-    result = fetch_ohlc_batch_tool(
+    result = get_ohlc_batch(
         requests=requests,
         exclude_weekends=True,
     )
@@ -148,7 +149,7 @@ def test_fetch_ohlc_batch():
 
     print()
     assert result["success"], (
-        f"fetch_ohlc_batch_tool should succeed. Error: {result.get('error')}"
+        f"get_ohlc_batch should succeed. Error: {result.get('error')}"
     )
     if result["success"]:
         assert result["statistics"]["total_succeeded"] > 0, (

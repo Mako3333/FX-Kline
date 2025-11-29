@@ -1,7 +1,8 @@
 """
-MCP Server Implementation for FX-Kline
+MCP Server Implementation for FX-Kline (v1.0.0 - MCP 2025 Compliant)
 
 Provides Model Context Protocol server functionality for fetching FX OHLC data.
+All tools follow MCP 2025 specification with proper annotations and error handling.
 """
 
 import asyncio
@@ -17,10 +18,6 @@ from mcp import types
 from mcp.types import ToolAnnotations
 
 from .tools import (
-    fetch_ohlc_tool,
-    fetch_ohlc_batch_tool,
-    list_available_pairs_tool,
-    list_available_timeframes_tool,
     get_intraday_ohlc,
     get_daily_ohlc,
     get_ohlc_batch,
@@ -154,176 +151,9 @@ async def handle_list_tools() -> list[types.Tool]:
             ),
         ),
         types.Tool(
-            name="fetch_ohlc",
-            description=(
-                "⚠️ DEPRECATED: Use 'get_intraday_ohlc' or 'get_daily_ohlc' instead. "
-                "This tool will be removed in 6 months (2026-05-16). "
-                "\n\n"
-                "Fetch OHLC (Open-High-Low-Close) data for a single FX currency pair. "
-                "\n\n"
-                "Migration guide: "
-                "For intraday intervals (1m-4h), use 'get_intraday_ohlc'. "
-                "For daily intervals (1d, 1wk, 1mo), use 'get_daily_ohlc'. "
-                "\n\n"
-                "Supports multiple timeframes (1m-1mo) and automatically converts to JST timezone "
-                "with business day filtering. "
-                "\n\n"
-                "Available pairs: USDJPY, EURUSD, GBPUSD, AUDUSD, EURJPY, GBPJPY, AUDJPY, XAUUSD (Gold)."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "pair": {
-                        "type": "string",
-                        "description": "Currency pair code (e.g., USDJPY, EURUSD, XAUUSD)",
-                    },
-                    "interval": {
-                        "type": "string",
-                        "description": "Timeframe interval (e.g., 1m, 5m, 15m, 1h, 4h, 1d)",
-                        "default": "1d",
-                    },
-                    "period": {
-                        "type": "string",
-                        "description": "Time period to fetch (e.g., 1d, 5d, 30d, 3mo, 1y)",
-                        "default": "30d",
-                    },
-                    "exclude_weekends": {
-                        "type": "boolean",
-                        "description": "Filter out weekend data (default: true)",
-                        "default": True,
-                    },
-                },
-                "required": ["pair"],
-            },
-            annotations=ToolAnnotations(
-                title="FX OHLC データ取得",
-                readOnlyHint=True,
-                idempotentHint=True,
-                openWorldHint=True,
-            ),
-        ),
-        types.Tool(
-            name="fetch_ohlc_batch",
-            description=(
-                "⚠️ DEPRECATED: Use 'get_ohlc_batch' instead. "
-                "This tool will be removed in 6 months (2026-05-16). "
-                "\n\n"
-                "Fetch OHLC data for multiple currency pairs and timeframes in parallel. "
-                "\n\n"
-                "Migration guide: Simply rename 'fetch_ohlc_batch' to 'get_ohlc_batch'. "
-                "The parameters and behavior are identical. "
-                "\n\n"
-                "More efficient than multiple single calls. Returns aggregated results "
-                "with detailed success/failure statistics. Maximum 50 requests per batch."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "requests": {
-                        "type": "array",
-                        "description": "Array of fetch requests",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "pair": {
-                                    "type": "string",
-                                    "description": "Currency pair code",
-                                },
-                                "interval": {
-                                    "type": "string",
-                                    "description": "Timeframe interval",
-                                    "default": "1d",
-                                },
-                                "period": {
-                                    "type": "string",
-                                    "description": "Time period to fetch",
-                                    "default": "30d",
-                                },
-                            },
-                            "required": ["pair"],
-                        },
-                    },
-                    "exclude_weekends": {
-                        "type": "boolean",
-                        "description": "Filter out weekend data (default: true)",
-                        "default": True,
-                    },
-                },
-                "required": ["requests"],
-            },
-            annotations=ToolAnnotations(
-                title="FX OHLC バッチ取得",
-                readOnlyHint=True,
-                idempotentHint=True,
-                openWorldHint=True,
-            ),
-        ),
-        types.Tool(
-            name="list_available_pairs",
-            description=(
-                "⚠️ DEPRECATED: Use 'list_pairs' instead. "
-                "This tool will be removed in 6 months (2026-05-16). "
-                "\n\n"
-                "List all available currency pairs that can be fetched. "
-                "\n\n"
-                "Migration guide: Simply rename 'list_available_pairs' to 'list_pairs'. "
-                "The parameters and behavior are identical. "
-                "\n\n"
-                "Returns a complete list of supported pairs with their full names. "
-                "Includes major FX pairs (USD, EUR, GBP, AUD crosses) and commodities (Gold)."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "preset_only": {
-                        "type": "boolean",
-                        "description": "Return only preset pairs (default: false)",
-                        "default": False,
-                    },
-                },
-            },
-            annotations=ToolAnnotations(
-                title="対応通貨ペア一覧",
-                readOnlyHint=True,
-                idempotentHint=True,
-                openWorldHint=False,
-            ),
-        ),
-        types.Tool(
-            name="list_available_timeframes",
-            description=(
-                "⚠️ DEPRECATED: Use 'list_timeframes' instead. "
-                "This tool will be removed in 6 months (2026-05-16). "
-                "\n\n"
-                "List all available timeframes/intervals for data fetching. "
-                "\n\n"
-                "Migration guide: Simply rename 'list_available_timeframes' to 'list_timeframes'. "
-                "The parameters and behavior are identical. "
-                "\n\n"
-                "Returns supported intervals ranging from 1-minute (1m) to monthly (1mo) data. "
-                "Includes: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1wk, 1mo."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "preset_only": {
-                        "type": "boolean",
-                        "description": "Return only preset timeframes (default: false)",
-                        "default": False,
-                    },
-                },
-            },
-            annotations=ToolAnnotations(
-                title="対応時間足一覧",
-                readOnlyHint=True,
-                idempotentHint=True,
-                openWorldHint=False,
-            ),
-        ),
-        types.Tool(
             name="get_ohlc_batch",
             description=(
-                "Fetch OHLC data for multiple currency pairs and timeframes in parallel (simplified name). "
+                "Fetch OHLC data for multiple currency pairs and timeframes in parallel. "
                 "\n\n"
                 "More efficient than multiple single calls. Returns aggregated results "
                 "with detailed success/failure statistics. Maximum 50 requests per batch. "
@@ -379,7 +209,7 @@ async def handle_list_tools() -> list[types.Tool]:
         types.Tool(
             name="list_pairs",
             description=(
-                "List all available currency pairs (simplified name). "
+                "List all available currency pairs. "
                 "\n\n"
                 "Returns a complete list of supported pairs with their full names. "
                 "Includes major FX pairs (USD, EUR, GBP, AUD crosses) and commodities (Gold). "
@@ -409,7 +239,7 @@ async def handle_list_tools() -> list[types.Tool]:
         types.Tool(
             name="list_timeframes",
             description=(
-                "List all available timeframes/intervals (simplified name). "
+                "List all available timeframes/intervals. "
                 "\n\n"
                 "Returns supported intervals ranging from 1-minute (1m) to monthly (1mo) data. "
                 "Includes: 1m, 5m, 15m, 30m, 1h, 4h, 1d, 1wk, 1mo. "
@@ -449,7 +279,7 @@ async def handle_list_tools() -> list[types.Tool]:
                 "monitoring server health. "
                 "\n\n"
                 "Returns: Server version, timestamp, capabilities (supported pairs/timeframes count, "
-                "max batch size), feature list, and endpoint categories (data_fetching, metadata, health, deprecated)."
+                "max batch size), feature list, and endpoint categories."
             ),
             inputSchema={
                 "type": "object",
@@ -538,34 +368,6 @@ async def handle_call_tool(
                 interval=arguments.get("interval", "1d"),
                 period=arguments.get("period", "30d"),
                 exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
-            )
-        elif name == "fetch_ohlc":
-            # Validate required parameters
-            if "pair" not in arguments:
-                raise ValueError("Missing required parameter: pair")
-
-            result = fetch_ohlc_tool(
-                pair=arguments["pair"],
-                interval=arguments.get("interval", "1d"),
-                period=arguments.get("period", "30d"),
-                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
-            )
-        elif name == "fetch_ohlc_batch":
-            # Validate required parameters
-            if "requests" not in arguments:
-                raise ValueError("Missing required parameter: requests")
-
-            result = fetch_ohlc_batch_tool(
-                requests=arguments["requests"],
-                exclude_weekends=_to_bool(arguments.get("exclude_weekends"), True),
-            )
-        elif name == "list_available_pairs":
-            result = list_available_pairs_tool(
-                preset_only=_to_bool(arguments.get("preset_only"), False)
-            )
-        elif name == "list_available_timeframes":
-            result = list_available_timeframes_tool(
-                preset_only=_to_bool(arguments.get("preset_only"), False)
             )
         elif name == "get_ohlc_batch":
             # Validate required parameters
@@ -667,7 +469,7 @@ if hasattr(server, "set_completions"):
                     "1mo": "1 month - Monthly trends",
                 }
             else:
-                # All intervals for deprecated/batch tools
+                # All intervals for batch tools
                 timeframes = get_supported_timeframes()
                 return [
                     types.Completion(
@@ -765,7 +567,7 @@ async def main():
         server_version = version("fx-kline")
     except PackageNotFoundError:
         # Fallback to hardcoded version if package is not installed
-        server_version = "0.1.0"
+        server_version = "1.0.0"
         logger.warning("Package 'fx-kline' not found in metadata, using fallback version")
 
     async with stdio_server() as (read_stream, write_stream):
