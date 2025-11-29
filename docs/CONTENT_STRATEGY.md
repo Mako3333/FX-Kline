@@ -1,51 +1,55 @@
-# HITL Trading System - Content Strategy & Monetization
+# HITLトレーディングシステム - コンテンツ戦略＆収益化
 
-## 🎯 Overview
+## 🎯 概要
 
-This document outlines the content strategy for monetizing the HITL trading system through **transparent process publication** on X (Twitter) and Note, creating a dual revenue stream:
-1. Trading profits
-2. Content/subscription revenue
+本書は、裁量×AIトレード HITL（Human-in-the-Loop：人間介在型）トレーディングシステムの収益化戦略をまとめたものです。X (Twitter) と Note での**透明性の高いプロセス公開**を通じて、以下の2つの収益源を確立することを目指します。
 
----
+1.  トレード収益
+2.  コンテンツ／サブスクリプション収益
 
-## 💡 Core Philosophy
+-----
 
-### Transparency as Brand Value
+## 💡 核となる哲学
 
-**Key Principle**: "Show the work, not just the results"
+### ブランド価値としての「透明性」
 
-Unlike typical FX "gurus" who only show wins:
-- ✅ We show ALL trades (wins AND losses)
-- ✅ We explain WHY decisions were made
-- ✅ We admit mistakes and learn publicly
-- ✅ We provide the actual data and code
+**重要原則**: 「結果だけでなく、過程（プロセス）を見せる」
 
-This builds **trust** and **differentiation**.
+勝ちトレードだけを見せる一般的なFX「怪しい人たち」とは異なり、私たちは以下を実践します。
 
----
+  - ✅ 全トレードを公開する（勝ちも負けも）
+  - ✅ なぜその判断に至ったかを説明する
+  - ✅ 間違いを認め、公の場で学習する
+  - ✅ 実際のデータを提供する
+  - ✅ 自分とフォロワーも勝てるようにする
 
-## 📱 Platform Strategy
+これが**信頼**と**差別化**を構築します。
 
-### Platform Matrix
+-----
 
-| Platform | Content Type | Frequency | Monetization | Audience |
+## 📱 プラットフォーム戦略
+
+### プラットフォーム・マトリクス
+
+| プラットフォーム | コンテンツタイプ | 頻度 | 収益化 | ターゲット層 |
 |----------|--------------|-----------|--------------|----------|
-| **X (Twitter)** | Quick updates, results | Daily | Indirect (traffic to Note) | General public, traders |
-| **Note (Free)** | Weekly analysis | Weekly | Freemium funnel | Serious learners |
-| **Note (Paid)** | Deep-dive, L1-L5 | Monthly | ¥500-1000/month | Committed followers |
-| **GitHub** | Code, data | Continuous | Reputation building | Technical audience |
+| **X (Twitter)** | 速報、結果報告 | 毎日 | 間接的（Noteへの誘導） | 一般層、トレーダー |
+| **Note (無料)** | 週次分析 | 毎週 | フリーミアム（有料への入口） | 本気で学ぶ人 |
+| **Note (有料)** | 詳細分析、L1-L5解説 | 毎月 | 月額 500〜1000円 | コアなフォロワー |
+| **GitHub** | コード、データ | 継続的 | 評判・信頼の構築 | 技術者層 |
 
----
+-----
 
-## 🐦 X (Twitter) Strategy
+## 🐦 X (Twitter) 戦略
 
-### Content Pillars
+### コンテンツの柱
 
-#### 1. Daily Decision Announcements (Pre-Trade)
+#### 1\. 毎日の判断発表（トレード前）
 
-**Format**:
+**フォーマット**:
+
 ```
-🔍 [Date] 環境認識
+🔍 [日付] 環境認識
 
 📊 L1（ファンダ）：[1行サマリー]
 📈 L2（テクニカル）：[1行サマリー]
@@ -59,7 +63,8 @@ This builds **trust** and **differentiation**.
 #HITL #FXトレード #USDJPY
 ```
 
-**Example**:
+**投稿例**:
+
 ```
 🔍 11/27 環境認識
 
@@ -75,13 +80,14 @@ This builds **trust** and **differentiation**.
 #HITL #FXトレード #USDJPY
 ```
 
----
+-----
 
-#### 2. Daily Results (Post-Trade)
+#### 2\. 毎日の結果報告（トレード後）
 
-**Format**:
+**フォーマット**:
+
 ```
-✅/❌ [Date] 結果報告
+✅/❌ [日付] 結果報告
 
 判断：[LONG/SHORT/WAIT]
 結果：[内容]
@@ -99,7 +105,8 @@ pips：[+XX / -XX / 0]
 #HITL #トレード記録
 ```
 
-**Example (Success)**:
+**投稿例 (成功)**:
+
 ```
 ✅ 11/27 結果報告
 
@@ -122,7 +129,8 @@ pips：0（損失回避）
 #HITL #トレード記録 #見送り判断
 ```
 
-**Example (Failure)**:
+**投稿例 (失敗)**:
+
 ```
 ❌ 11/25 結果報告
 
@@ -145,11 +153,12 @@ pips：-50
 #HITL #トレード記録 #失敗から学ぶ
 ```
 
----
+-----
 
-#### 3. Weekly Summary
+#### 3\. 週次サマリー
 
-**Format**:
+**フォーマット**:
+
 ```
 📊 週次レポート [Week XX]
 
@@ -171,19 +180,21 @@ pips：-50
 #HITL #週次レポート #FXトレード
 ```
 
----
+-----
 
-#### 4. Educational Content (Engagement)
+#### 4\. 教育コンテンツ（エンゲージメント向上）
 
-**Purpose**: Engagement, follower growth
+**目的**: エンゲージメント向上、フォロワー獲得
 
-**Topics**:
-- トレードルールの紹介
-- 失敗パターンの解説
-- L3 vs L4 のケーススタディ
-- リスク管理のTips
+**トピック**:
 
-**Example**:
+  - トレードルールの紹介
+  - 失敗パターンの解説
+  - L3 vs L4 のケーススタディ
+  - リスク管理のTips
+
+**投稿例**:
+
 ```
 💡 【HITL Tips】見送り判断の価値
 
@@ -203,52 +214,57 @@ pips：-50
 #HITL #見送り判断 #リスク管理
 ```
 
----
+-----
 
-### Posting Schedule
+### 投稿スケジュール
 
-| Time (JST) | Content Type | Purpose |
+| 時間 (JST) | コンテンツタイプ | 目的 |
 |------------|--------------|---------|
-| 15:00-16:00 | Decision Announcement | Pre-trade transparency |
-| 翌日 09:00-10:00 | Result Report | Post-trade accountability |
-| 金曜 20:00 | Weekly Summary | Engagement, Note traffic |
-| 随時 | Educational Tips | Follower growth |
+| 15:00-16:00 | 判断発表 | トレード前の透明性確保 |
+| 翌日 09:00-10:00 | 結果報告 | トレード後の説明責任 |
+| 金曜 20:00 | 週次サマリー | エンゲージメント、Noteへの誘導 |
+| 随時 | 教育Tips | フォロワー増加 |
 
----
+-----
 
-### Growth Strategy
+### 成長戦略
 
-**Target**: 1000 followers in 6 months
+**目標**: 6ヶ月でフォロワー1000人
 
-**Tactics**:
-1. **Hashtag Strategy**:
-   - #HITL #FXトレード #USDJPY（毎回）
-   - #トレード記録 #AI活用（定期）
-   - #失敗から学ぶ（失敗時）
+**戦術**:
 
-2. **Engagement**:
-   - Reply to comments within 1 hour
-   - Ask questions to followers
-   - Share others' content (with commentary)
+1.  **ハッシュタグ戦略**:
 
-3. **Collaborations**:
-   - Quote-tweet FX news with analysis
-   - Engage with FX trading community
-   - Cross-promote with other traders (carefully vetted)
+      - \#HITL \#FXトレード \#USDJPY（毎回）
+      - \#トレード記録 \#AI活用（定期的に）
+      - \#失敗から学ぶ（失敗時）
 
----
+2.  **エンゲージメント**:
 
-## 📝 Note Strategy
+      - コメントには1時間以内に返信
+      - フォロワーへの質問投げかけ
+      - 他者のコンテンツのシェア（自分のコメント付きで）
 
-### Content Tiers
+3.  **コラボレーション**:
 
-#### Tier 1: Free Articles (Weekly)
+      - FXニュースの引用リツイート（分析付き）
+      - FXトレードコミュニティとの交流
+      - 他のトレーダーとの相互交流（慎重に選定）
 
-**Purpose**: Funnel to paid subscription
+-----
 
-**Content Structure**:
+## 📝 Note 戦略
+
+### コンテンツの階層
+
+#### Tier 1: 無料記事（週次）
+
+**目的**: 有料購読への誘導
+
+**記事構成**:
+
 ```markdown
-# [Date] 週次トレードレポート
+# [日付] 週次トレードレポート
 
 ## 📊 今週のサマリー
 - トレード数：X回
@@ -266,9 +282,7 @@ pips：-50
 [実際の値動きと結果]
 
 #### 学び
-[この
-
-トレードから学んだこと]
+[このトレードから学んだこと]
 
 ## 💡 今週の気づき
 [全体的な振り返り]
@@ -281,19 +295,20 @@ pips：-50
 ※ 全トレードの詳細分析は有料記事で
 ```
 
-**Length**: 1500-2000 words
-**Images**: L2チャート画像 2-3枚
-**Call-to-Action**: 有料記事への誘導
+**文字数**: 1500-2000文字
+**画像**: L2チャート画像 2-3枚
+**CTA**: 有料記事へのリンク設置
 
----
+-----
 
-#### Tier 2: Paid Articles (Monthly)
+#### Tier 2: 有料記事（月次）
 
-**Price**: ¥500-1000/month
+**価格**: 月額 500〜1000円
 
-**Content Structure**:
-```markdown
-# [Month] 月次完全レポート
+**記事構成**:
+
+````markdown
+# [月] 月次完全レポート
 
 ## 📈 月間パフォーマンス
 ### 定量指標
@@ -325,225 +340,242 @@ pips：-50
 ```
 
 #### L4 HITL判断
+
 [介入内容、理由、心理状態]
 
 #### 結果と分析
+
 [詳細な事後分析]
 
----
+-----
 
-### トレード #2: ...
+### トレード \#2: ...
+
 [同様に全トレードを網羅]
 
 ## 🎓 今月の学び（深掘り）
 
 ### 成功パターン
-1. [パターン1の詳細分析]
-2. [パターン2の詳細分析]
+
+1.  [パターン1の詳細分析]
+2.  [パターン2の詳細分析]
 
 ### 失敗パターン
-1. [失敗例の詳細分析]
-2. [改善アクション]
+
+1.  [失敗例の詳細分析]
+2.  [改善アクション]
 
 ### ルール更新
-[mako_trading_rules.md の更新内容]
+
+[mako\_trading\_rules.md の更新内容]
 
 ## 📊 データ分析
 
 ### 市場環境別パフォーマンス
-- TRENDING: 勝率XX%
-- RANGING: 勝率XX%
-- CHOPPY: 勝率XX%
+
+  - トレンド相場：勝率XX%
+  - レンジ相場：勝率XX%
+  - 不規則相場（チョッピー）：勝率XX%
 
 ### 時間帯別パフォーマンス
+
 [グラフ付き分析]
 
 ### 介入タイプ別成功率
+
 [HITLの価値を定量化]
 
 ## 🔮 来月の展望
+
 [市場見通し、注目イベント、戦略調整]
 
----
+-----
 
 ## 📚 付録
-- L3予測の生JSON（全件）
-- L4トレードプランの生JSON（全件）
-- 評価結果の生JSON（全件）
-- Pythonコードスニペット（分析用）
+
+  - L3予測の生JSON（全件）
+  - L4トレードプランの生JSON（全件）
+  - 評価結果の生JSON（全件）
+  - Pythonコードスニペット（分析用）
+
+<!-- end list -->
+
 ```
 
-**Length**: 10,000-15,000 words
-**Images**: 20-30枚（チャート、グラフ）
-**Data**: 生JSONファイルのダウンロードリンク
-**Code**: 分析用Pythonスニペット
+**文字数**: 10,000-15,000文字
+**画像**: 20-30枚（チャート、グラフ）
+**データ**: 生JSONファイルのダウンロードリンク
+**コード**: 分析用Pythonスニペット
 
 ---
 
-### Note Monetization Model
+### Note 収益化モデル
 
-**Pricing Options**:
+**価格オプション**:
 
-| Plan | Price | Content |
+| プラン | 価格 | 内容 |
 |------|-------|---------|
-| Free | ¥0 | Weekly summary |
-| Premium | ¥500/month | Monthly deep-dive + archives |
-| Supporter | ¥1000/month | Premium + Q&A + early access |
+| 無料 (Free) | ¥0 | 週次サマリー |
+| プレミアム (Premium) | ¥500/月 | 月次詳細レポート + 過去記事 |
+| サポーター (Supporter) | ¥1000/月 | プレミアム + Q&A + 先行アクセス |
 
-**Target Subscribers**:
-- Month 3: 20 subscribers (¥10,000/month)
-- Month 6: 50 subscribers (¥25,000/month)
-- Month 12: 100 subscribers (¥50,000/month)
+**目標購読者数**:
+- 3ヶ月目: 20人 (¥10,000/月)
+- 6ヶ月目: 50人 (¥25,000/月)
+- 12ヶ月目: 100人 (¥50,000/月)
 
-**Annual Revenue (Year 1)**: ¥300,000-600,000
+**年間収益予測 (初年度)**: ¥300,000〜600,000
 
 ---
 
-## 📊 GitHub Strategy
+## 📊 GitHub 戦略
 
-### Open Source Approach
+### オープンソースアプローチ
 
-**What to Publish**:
-- ✅ All code (l3_evaluator, ohlc_aggregator, etc.)
-- ✅ Architecture documentation
-- ✅ Anonymized data (30+ days)
-- ✅ Research findings
+**公開するもの**:
+- ✅ 全コード (l3_evaluator, ohlc_aggregator 等)
+- ✅ アーキテクチャドキュメント
+- ✅ 匿名化されたデータ (30日以上前のもの)
+- ✅ 研究結果
 
-**What NOT to Publish**:
-- ❌ Account balance (absolute values)
-- ❌ Broker details
-- ❌ Real-time positions (security risk)
+**公開しないもの**:
+- ❌ 口座残高（絶対額）
+- ❌ ブローカーの詳細
+- ❌ リアルタイムのポジション情報（セキュリティリスク）
 
-### Repository Structure
+### リポジトリ構成
 
 ```
+
 FX-Kline/
-├── README.md              # Project overview
+├── README.md              \# プロジェクト概要
 ├── docs/
-│   ├── HITL_SYSTEM_ADVICE.md
-│   ├── ACADEMIC_VALUE.md
-│   ├── IMPLEMENTATION_GUIDE.md
+│   ├── HITL\_SYSTEM\_ADVICE.md
+│   ├── ACADEMIC\_VALUE.md
+│   ├── IMPLEMENTATION\_GUIDE.md
 │   └── ...
-├── src/                   # Source code
+├── src/                   \# ソースコード
 ├── data/
-│   └── anonymized/        # Anonymized historical data
+│   └── anonymized/        \# 匿名化された履歴データ
 │       └── 2025-11/
-│           ├── L3_predictions.json
-│           ├── L4_evaluations.json
-│           └── performance_metrics.csv
+│           ├── L3\_predictions.json
+│           ├── L4\_evaluations.json
+│           └── performance\_metrics.csv
 └── research/
-    ├── calibration_analysis.ipynb
-    └── hitl_value_analysis.ipynb
+├── calibration\_analysis.ipynb
+└── hitl\_value\_analysis.ipynb
+
 ```
 
-### Community Building
+### コミュニティ構築
 
-**Goals**:
-- 500+ GitHub stars in 12 months
-- 20+ contributors
-- 5+ academic citations
+**目標**:
+- 12ヶ月でGitHubスター 500+
+- コントリビューター 20名以上
+- 学術的引用 5件以上
 
-**Tactics**:
-- Monthly blog posts on GitHub Pages
-- Jupyter notebooks for analysis
-- Beginner-friendly documentation
-- "Good first issue" labels
+**戦術**:
+- GitHub Pagesでの月次ブログ投稿
+- 分析用Jupyter Notebookの公開
+- 初心者向けドキュメントの整備
+- 「Good first issue（初心者歓迎）」ラベルの活用
 
 ---
 
-## 🎥 Future Expansion (Phase 2)
+## 🎥 将来の拡張（フェーズ2）
 
 ### YouTube
 
-**When**: After 6 months of proven track record
+**時期**: トラックレコード証明後（6ヶ月後以降）
 
-**Content**:
-- Weekly video: "今週のトレード解説"
-- Monthly: "HITLシステムの裏側"
-- Educational: "テクニカル分析基礎"
+**コンテンツ**:
+- 毎週の動画：「今週のトレード解説」
+- 毎月：「HITLシステムの裏側」
+- 教育：「テクニカル分析基礎」
 
-**Revenue**: Ad revenue + チャンネルメンバーシップ
+**収益**: 広告収入 + チャンネルメンバーシップ
 
-### Discord Community
+### Discord コミュニティ
 
-**When**: 100+ Note subscribers
+**時期**: Note購読者 100名達成後
 
-**Structure**:
-- #general: Free
-- #premium-chat: Paid members only
-- #q-and-a: Weekly AMA
-
----
-
-## 📈 Content Metrics & KPIs
-
-### X (Twitter) Metrics
-
-**Track Daily**:
-- Impressions per post
-- Engagement rate (likes + RTs + replies / impressions)
-- Follower growth rate
-
-**Target**:
-- Engagement rate: >5%
-- Follower growth: +10/day
-
-### Note Metrics
-
-**Track Weekly**:
-- Views per article
-- Free → Paid conversion rate
-- Subscriber churn rate
-
-**Target**:
-- Conversion rate: >3%
-- Churn rate: <10%/month
-
-### GitHub Metrics
-
-**Track Monthly**:
-- Stars
-- Forks
-- Issues/PRs
-- Unique visitors
-
-**Target**:
-- Stars: +50/month
-- Unique visitors: 500+/month
+**構造**:
+- #general: 無料
+- #premium-chat: 有料メンバー限定
+- #q-and-a: 週次AMA（Ask Me Anything）
 
 ---
 
-## ✍️ Content Creation Workflow
+## 📈 コンテンツ指標 & KPI
 
-### Weekly Schedule
+### X (Twitter) 指標
 
-**Sunday (Planning)**:
-- Review week's trades
-- Draft Note article outline
-- Schedule X posts for the week
+**毎日計測**:
+- 投稿ごとのインプレッション数
+- エンゲージメント率 (いいね + RT + 返信 / インプレッション)
+- フォロワー増加率
 
-**Monday-Friday (Execution)**:
-- 15:00: Post decision announcement (X)
-- 16:00-17:00: Log L4 decision
-- 次日09:00: Post result (X)
+**目標**:
+- エンゲージメント率: >5%
+- フォロワー増加: +10人/日
 
-**Friday (Publishing)**:
-- 20:00: Publish Note weekly article
-- 21:00: Post summary on X with Note link
+### Note 指標
 
-**Saturday (Reflection)**:
-- Review metrics (X, Note, GitHub)
-- Update content calendar
-- Rest!
+**毎週計測**:
+- 記事ごとのビュー数
+- 無料→有料 転換率
+- 購読解約率
+
+**目標**:
+- 転換率: >3%
+- 解約率: <10%/月
+
+### GitHub 指標
+
+**毎月計測**:
+- スター数
+- フォーク数
+- Issue/PR数
+- ユニークビジター数
+
+**目標**:
+- スター数: +50/月
+- ユニークビジター: 500人以上/月
 
 ---
 
-## 🚨 Content Risk Management
+## ✍️ コンテンツ制作ワークフロー
 
-### Legal Considerations
+### 週間スケジュール
 
-**Disclaimers** (Required on ALL content):
+**日曜日（計画）**:
+- その週のトレード振り返り
+- Note記事のアウトライン作成
+- 今週のX投稿の予約設定
+
+**月曜日〜金曜日（実行）**:
+- 15:00: 判断発表の投稿 (X)
+- 16:00-17:00: L4判断のログ記録
+- 翌日09:00: 結果報告の投稿 (X)
+
+**金曜日（公開）**:
+- 20:00: Note週次記事の公開
+- 21:00: Noteリンク付きのサマリーをXへ投稿
+
+**土曜日（振り返り）**:
+- 指標確認 (X, Note, GitHub)
+- コンテンツカレンダーの更新
+- 休息！
+
+---
+
+## 🚨 コンテンツ・リスク管理
+
+### 法的考慮事項
+
+**免責事項**（全コンテンツに必須）:
 ```
+
 ⚠️ 免責事項
 
 本コンテンツは教育・研究目的であり、
@@ -551,137 +583,149 @@ FX-Kline/
 
 トレードは自己責任で行ってください。
 過去の成績は将来の結果を保証しません。
+
 ```
 
-### Ethical Guidelines
+### 倫理ガイドライン
 
-**DO**:
-- ✅ Show all trades (wins and losses)
-- ✅ Admit mistakes transparently
-- ✅ Provide disclaimers
-- ✅ Respect intellectual property
+**やるべきこと (DO)**:
+- ✅ 全トレードを公開する（勝ちも負けも）
+- ✅ 間違いを透明性を持って認める
+- ✅ 免責事項を提示する
+- ✅ 知的財産権を尊重する
 
-**DON'T**:
-- ❌ Guarantee profits
-- ❌ Pressure people to trade
-- ❌ Hide losses
-- ❌ Exaggerate results
+**やってはいけないこと (DON'T)**:
+- ❌ 利益を保証する
+- ❌ トレードを強要・推奨する
+- ❌ 損失を隠す
+- ❌ 結果を誇張する
 
 ---
 
-## 💰 Revenue Projections
+## 💰 収益予測
 
-### Year 1 Projections
+### 初年度の予測
 
-| Month | X Followers | Note Subs | Trading P/L | Content Revenue | Total |
+| 月 | X フォロワー | Note 購読者 | トレード損益 | コンテンツ収益 | 合計 |
 |-------|-------------|-----------|-------------|-----------------|-------|
 | 1 | 100 | 0 | ¥50,000 | ¥0 | ¥50,000 |
 | 3 | 300 | 20 | ¥150,000 | ¥10,000 | ¥160,000 |
 | 6 | 600 | 50 | ¥300,000 | ¥25,000 | ¥325,000 |
 | 12 | 1000+ | 100 | ¥600,000 | ¥50,000 | ¥650,000 |
 
-**Total Year 1**: ¥3,000,000-5,000,000
-- Trading: 70%
-- Content: 30%
+**初年度 合計**: ¥3,000,000〜5,000,000
+- トレード: 70%
+- コンテンツ: 30%
 
-**Year 2 Target**: ¥10,000,000+
-- Trading: 60%
-- Content: 40% (YouTube, Discord, etc.)
-
----
-
-## 🎯 Success Criteria
-
-### 3 Months
-- [ ] X: 300 followers
-- [ ] Note: 10 free articles published
-- [ ] Note: 20 paid subscribers
-- [ ] GitHub: 100 stars
-
-### 6 Months
-- [ ] X: 600 followers
-- [ ] Note: 25 free articles
-- [ ] Note: 50 paid subscribers
-- [ ] GitHub: 300 stars
-
-### 12 Months
-- [ ] X: 1000+ followers
-- [ ] Note: 50 free articles
-- [ ] Note: 100 paid subscribers
-- [ ] GitHub: 500 stars
-- [ ] 1 academic paper submitted
+**2年目 目標**: ¥10,000,000以上
+- トレード: 60%
+- コンテンツ: 40% (YouTube, Discord など含む)
 
 ---
 
-## 📚 Content Templates Repository
+## 🎯 成功基準
 
-Create `content_templates/` directory:
+### 3ヶ月後
+- [ ] X: フォロワー 300人
+- [ ] Note: 無料記事 10本公開
+- [ ] Note: 有料購読者 20人
+- [ ] GitHub: 100 スター
 
-```
-content_templates/
-├── x_decision_announcement.md
-├── x_result_report.md
-├── x_weekly_summary.md
-├── note_weekly_free.md
-├── note_monthly_paid.md
-└── github_monthly_update.md
-```
+### 6ヶ月後
+- [ ] X: フォロワー 600人
+- [ ] Note: 無料記事 25本
+- [ ] Note: 有料購読者 50人
+- [ ] GitHub: 300 スター
 
-Use these templates to maintain consistency and save time.
+### 12ヶ月後
+- [ ] X: フォロワー 1000人以上
+- [ ] Note: 無料記事 50本
+- [ ] Note: 有料購読者 100人
+- [ ] GitHub: 500 スター
+- [ ] 学術論文 1本投稿
 
 ---
 
-## 🤝 Community Engagement
+## 📚 コンテンツテンプレート・リポジトリ
 
-### Responding to Comments
+`content_templates/` ディレクトリを作成:
 
-**Positive Comments**:
 ```
+
+content\_templates/
+├── x\_decision\_announcement.md  \# 判断発表用
+├── x\_result\_report.md          \# 結果報告用
+├── x\_weekly\_summary.md         \# 週次サマリー用
+├── note\_weekly\_free.md         \# Note無料記事用
+├── note\_monthly\_paid.md        \# Note有料記事用
+└── github\_monthly\_update.md    \# GitHub更新用
+
+```
+
+これらを使用して一貫性を保ち、時間を節約します。
+
+---
+
+## 🤝 コミュニティ・エンゲージメント
+
+### コメントへの返信方針
+
+**肯定的なコメント**:
+```
+
 ありがとうございます！
 引き続き透明性高く発信していきます💪
+
 ```
 
-**Questions**:
+**質問**:
 ```
+
 いい質問ですね。
 詳しくは今週末のNote記事で解説します！
+
 ```
 
-**Criticism**:
+**批判**:
 ```
+
 ご指摘ありがとうございます。
 [具体的な返答]
 改善点は次回のL5レビューに反映します。
+
 ```
 
-**Negative/Trolls**:
+**ネガティブ/荒らし**:
 ```
-（無視 or ブロック）
+
+（無視 または ブロック）
+
 ```
 
 ---
 
-## 🎓 Content Quality Standards
+## 🎓 コンテンツ品質基準
 
-### Before Publishing Checklist
+### 公開前チェックリスト
 
-**X Posts**:
-- [ ] Factually accurate
-- [ ] Disclaimer included (if needed)
-- [ ] Hashtags appropriate
-- [ ] Image/chart attached (if applicable)
-- [ ] Typos checked
+**X (Twitter) 投稿**:
+- [ ] 事実関係は正確か
+- [ ] 免責事項は含まれているか（必要な場合）
+- [ ] ハッシュタグは適切か
+- [ ] 画像/チャートは添付したか（該当する場合）
+- [ ] 誤字脱字チェック
 
-**Note Articles**:
-- [ ] All data verified
-- [ ] Charts clearly labeled
-- [ ] Code snippets tested
-- [ ] Disclaimer at top
-- [ ] Call-to-action at bottom
-- [ ] Proofreading complete
+**Note 記事**:
+- [ ] 全データを確認済みか
+- [ ] チャートのラベルは明確か
+- [ ] コードスニペットはテスト済みか
+- [ ] 冒頭に免責事項があるか
+- [ ] 末尾にCTA（誘導）があるか
+- [ ] 校正完了済みか
 
 ---
 
-**Last Updated**: 2025-11-28
-**Version**: 1.0
-**Status**: Ready for implementation
+**最終更新日**: 2025-11-28
+**バージョン**: 1.0
+**ステータス**: 実装準備完了
+```

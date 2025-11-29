@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Karte: 20251129_01 - USDJPY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* トレード方向に基づくカスタムカラー定義 */
+        /* LONGの場合のアクセントカラー（緑） */
+        .theme-color { color: #10B981; }
+        .theme-bg { background-color: #10B981; }
+        .theme-bg-light { background-color: #D1FAE5; }
+        .theme-border { border-color: #10B981; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-8 antialiased">
+
+    <div class="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+        
+        <header class="bg-gray-900 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div class="flex flex-col mb-4 md:mb-0">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-4xl font-black tracking-tight">USDJPY</h1>
+                    <span class="px-4 py-2 rounded-full text-sm font-bold theme-bg-light theme-color flex items-center shadow-sm">
+                        <i class="fas fa-arrow-trend-up mr-2 text-lg"></i> LONG
+                    </span>
+                </div>
+                <div class="text-gray-400 text-sm mt-2 flex space-x-4 font-mono">
+                    <span><i class="far fa-id-badge mr-1"></i>ID: 20251129_01</span>
+                    <span><i class="fas fa-wallet mr-1"></i>AC: XM_01</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-5xl font-extrabold theme-color leading-none flex items-center justify-end">
+                    <span class="text-3xl mr-1">+</span>65.0 <span class="text-xl ml-1 text-gray-400">Pips</span>
+                </div>
+                <div class="text-gray-400 mt-1 font-medium">Risk Reward: <span class="text-white font-bold">2.1</span></div>
+            </div>
+        </header>
+
+        <main class="p-6 grid grid-cols-1 xl:grid-cols-3 gap-8">
+            
+            <div class="xl:col-span-2 space-y-8">
+                <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h2 class="text-lg font-bold flex items-center text-gray-700">
+                            <i class="fas fa-chart-line mr-2 theme-color"></i> エントリー時の状況
+                        </h2>
+                        <span class="text-xs font-semibold text-gray-500 bg-gray-200 px-2 py-1 rounded">1H Chart</span>
+                    </div>
+                    <div class="aspect-video bg-gray-100 relative flex items-center justify-center group">
+                        <img src="entry_chart.png" alt="Entry Chart" class="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105" onerror="this.src='https://placehold.co/800x450/e2e8f0/64748b?text=Entry+Chart+Image\\n(entry_chart.png)';this.onerror=null;">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div class="p-3 border-b border-gray-100 bg-gray-50">
+                            <h3 class="text-sm font-bold text-gray-600 flex items-center">
+                                <i class="fas fa-map theme-color mr-2"></i> 上位足の環境認識 (H4)
+                            </h3>
+                        </div>
+                        <div class="aspect-video bg-gray-100 relative flex items-center justify-center">
+                            <img src="h4_context.png" alt="H4 Context Chart" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x225/e2e8f0/64748b?text=Higher+TF+Context\\n(h4_context.png)';this.onerror=null;">
+                        </div>
+                    </section>
+                    <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div class="p-3 border-b border-gray-100 bg-gray-50">
+                            <h3 class="text-sm font-bold text-gray-600 flex items-center">
+                                <i class="fas fa-chart-area theme-color mr-2"></i> 決済時の状況
+                            </h3>
+                        </div>
+                        <div class="aspect-video bg-gray-100 relative flex items-center justify-center">
+                            <img src="exit.png" alt="Exit Chart" class="object-cover w-full h-full" onerror="this.src='https://placehold.co/400x225/e2e8f0/64748b?text=Exit+Chart+Image\\n(exit.png)';this.onerror=null;">
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                
+                <section class="bg-white rounded-xl shadow-md overflow-hidden border-l-4 theme-border">
+                    <div class="p-4 bg-gray-50 border-b border-gray-100">
+                        <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-timeline mr-2 text-gray-500"></i>Execution Flow
+                        </h2>
+                    </div>
+                    <div class="p-5 relative">
+                        <div class="absolute left-8 top-8 bottom-8 w-0.5 bg-gray-200 z-0"></div>
+
+                        <div class="relative z-10 flex items-start mb-10">
+                            <div class="theme-bg text-white rounded-full w-10 h-10 flex items-center justify-center mr-4 flex-shrink-0 shadow-lg ring-4 ring-white">
+                                <i class="fas fa-arrow-right-to-bracket text-lg"></i>
+                            </div>
+                            <div class="flex-grow pt-1">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <h3 class="font-bold theme-color text-lg">ENTRY</h3>
+                                    <span class="text-2xl font-black text-gray-800">152.30</span>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 border border-gray-200">
+                                    <i class="fas fa-quote-left text-gray-300 mr-2"></i>
+                                    1H押し目 + POG2条件一致
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="relative z-10 flex items-start">
+                            <div class="bg-gray-700 text-white rounded-full w-10 h-10 flex items-center justify-center mr-4 flex-shrink-0 shadow-lg ring-4 ring-white">
+                                <i class="fas fa-arrow-right-from-bracket text-lg"></i>
+                            </div>
+                            <div class="flex-grow pt-1">
+                                <div class="flex justify-between items-baseline mb-1">
+                                    <h3 class="font-bold text-gray-700 text-lg">EXIT</h3>
+                                    <span class="text-2xl font-black text-gray-800">152.95</span>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 border border-gray-200">
+                                    <i class="fas fa-quote-left text-gray-300 mr-2"></i>
+                                    東京終盤のボラ低下により決済
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 flex items-center">
+                        <div class="bg-blue-200 text-blue-700 w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-chess-knight text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-blue-600 font-bold uppercase tracking-wider">Strategy</span>
+                            <div class="text-xl font-black text-blue-900">POG2</div>
+                        </div>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-xl border border-purple-200 flex items-center">
+                        <div class="bg-purple-200 text-purple-700 w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-mountain text-xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-purple-600 font-bold uppercase tracking-wider">Regime</span>
+                            <div class="text-xl font-black text-purple-900 flex items-center">
+                                UPTREND
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                         <h3 class="text-sm font-bold text-gray-600 flex items-center">
+                            <i class="fas fa-microchip mr-2 text-indigo-500"></i> AI References
+                        </h3>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        <div class="p-3 flex justify-between items-center hover:bg-gray-50 transition">
+                            <div>
+                                <span class="text-xs text-gray-500 font-semibold block mb-1">L3 Strategy Ref</span>
+                                <span class="font-mono font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-sm">rank_1_long</span>
+                            </div>
+                        </div>
+                        <div class="p-3 flex justify-between items-center hover:bg-gray-50 transition">
+                            <div>
+                                <span class="text-xs text-gray-500 font-semibold block mb-1">L4 Plan Ref</span>
+                                <span class="font-mono font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-sm">hitl_plan_id</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-yellow-50 border-2 border-yellow-200 rounded-xl shadow-sm p-5 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-2 -mr-2 text-yellow-200 opacity-50 text-6xl transform rotate-12 pointer-events-none">
+                        <i class="fas fa-note-sticky"></i>
+                    </div>
+                    <h2 class="text-md font-bold text-yellow-800 mb-3 flex items-center relative z-10">
+                        <i class="fas fa-pen-nib mr-2"></i> Notes & Reflections
+                    </h2>
+                    <ul class="list-none space-y-2 relative z-10">
+                        <li class="flex items-start text-sm text-yellow-900 font-medium">
+                            <i class="fas fa-check-circle text-yellow-600 mt-1 mr-2 flex-shrink-0"></i>
+                            "東京の押し目は素直。視覚的にヒゲが長くて迷った。"
+                        </li>
+                    </ul>
+                </section>
+
+            </div>
+        </main>
+    </div>
+</body>
+</html>

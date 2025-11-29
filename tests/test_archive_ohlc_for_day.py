@@ -8,11 +8,11 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = PROJECT_ROOT / "src"
-SCRIPTS_PATH = PROJECT_ROOT / "scripts"
 
-for p in (SRC_PATH, SCRIPTS_PATH):
-    if str(p) not in sys.path:
-        sys.path.insert(0, str(p))
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from fx_kline.analyst import data_manager  # noqa: E402
 import scripts.archive_ohlc_for_day as archive_ohlc_for_day  # noqa: E402

@@ -1,7 +1,8 @@
 """
-MCP Tools Implementation for FX-Kline
+MCP Tools Implementation for FX-Kline (v1.0.0 - MCP 2025 Compliant)
 
 Defines the MCP tools that interact with the core FX-Kline functionality.
+All tools follow MCP 2025 specification with proper annotations and error handling.
 """
 
 from typing import Any, Dict, List
@@ -126,215 +127,6 @@ def _normalize_datetime(obj: Any) -> Any:
         return obj
 
 
-def fetch_ohlc_tool(
-    pair: str,
-    interval: str = "1d",
-    period: str = "30d",
-    exclude_weekends: bool = True
-) -> Dict[str, Any]:
-    """
-    Fetch OHLC data for a single currency pair and timeframe.
-
-    Args:
-        pair: Currency pair code (e.g., "USDJPY", "EURUSD", "XAUUSD")
-        interval: Timeframe (e.g., "1m", "5m", "15m", "1h", "1d")
-        period: Time period (e.g., "1d", "5d", "30d", "3mo")
-        exclude_weekends: Filter out weekend data (default: True)
-
-    Returns:
-        Dictionary containing OHLC data or error information
-    """
-    try:
-        request = OHLCRequest(pair=pair, interval=interval, period=period)
-        response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
-
-        if response.total_succeeded > 0:
-            ohlc_data = response.successful[0]
-            result = {
-                "success": True,
-                "data": {
-                    "pair": ohlc_data.pair,
-                    "interval": ohlc_data.interval,
-                    "period": ohlc_data.period,
-                    "data_count": ohlc_data.data_count,
-                    "timestamp_jst": ohlc_data.timestamp_jst,
-                    "columns": ohlc_data.columns,
-                    "rows": ohlc_data.rows,
-                }
-            }
-            return _normalize_datetime(result)
-        else:
-            error = response.failed[0]
-            error_type = error.error_type
-            result = {
-                "success": False,
-                "error": {
-                    "type": error_type,
-                    "category": _categorize_error(error_type),
-                    "message": error.error_message,
-                    "hint": _generate_hint(error_type),
-                    "recoverable": _is_recoverable(error_type),
-                    "suggested_tools": _suggest_tools(error_type),
-                    # Preserve top-level fields for backward compatibility
-                    "pair": error.pair,
-                    "interval": error.interval,
-                    "period": error.period,
-                    "context": {
-                        "pair": error.pair,
-                        "interval": error.interval,
-                        "period": error.period,
-                    }
-                }
-            }
-            return _normalize_datetime(result)
-    except Exception as e:
-        error_type = "UnexpectedError"
-        result = {
-            "success": False,
-            "error": {
-                "type": error_type,
-                "category": _categorize_error(error_type),
-                "message": str(e),
-                "hint": _generate_hint(error_type),
-                "recoverable": _is_recoverable(error_type),
-                "suggested_tools": _suggest_tools(error_type),
-                # Preserve top-level fields for backward compatibility
-                "pair": pair,
-                "interval": interval,
-                "period": period,
-                "context": {
-                    "pair": pair,
-                    "interval": interval,
-                    "period": period,
-                }
-            }
-        }
-        return _normalize_datetime(result)
-
-
-def fetch_ohlc_batch_tool(
-    requests: List[Dict[str, str]],
-    exclude_weekends: bool = True
-) -> Dict[str, Any]:
-    """
-    Fetch OHLC data for multiple currency pairs and timeframes in parallel.
-
-    Args:
-        requests: List of request dictionaries, each containing:
-            - pair: Currency pair code
-            - interval: Timeframe
-            - period: Time period
-        exclude_weekends: Filter out weekend data (default: True)
-
-    Returns:
-        Dictionary containing batch results with successful and failed requests
-
-    Example:
-        requests = [
-            {"pair": "USDJPY", "interval": "1d", "period": "30d"},
-            {"pair": "EURUSD", "interval": "1h", "period": "5d"},
-        ]
-    """
-    try:
-        # Validate batch size to prevent excessive API requests
-        if len(requests) > MAX_BATCH_SIZE:
-            error_type = "BatchSizeExceeded"
-            result = {
-                "success": False,
-                "error": {
-                    "type": error_type,
-                    "category": _categorize_error(error_type),
-                    "message": f"Batch size ({len(requests)}) exceeds maximum allowed ({MAX_BATCH_SIZE})",
-                    "hint": _generate_hint(error_type),
-                    "recoverable": _is_recoverable(error_type),
-                    "suggested_tools": _suggest_tools(error_type),
-                    # Preserve top-level fields for backward compatibility
-                    "max_batch_size": MAX_BATCH_SIZE,
-                    "requested_size": len(requests),
-                    "context": {
-                        "max_batch_size": MAX_BATCH_SIZE,
-                        "requested_size": len(requests),
-                    }
-                }
-            }
-            return _normalize_datetime(result)
-
-        ohlc_requests = [
-            OHLCRequest(
-                pair=req["pair"],
-                interval=req.get("interval", "1d"),
-                period=req.get("period", "30d")
-            )
-            for req in requests
-        ]
-
-        response = fetch_batch_ohlc_sync(ohlc_requests, exclude_weekends=exclude_weekends)
-
-        successful_data = [
-            {
-                "pair": ohlc.pair,
-                "interval": ohlc.interval,
-                "period": ohlc.period,
-                "data_count": ohlc.data_count,
-                "timestamp_jst": ohlc.timestamp_jst,
-                "columns": ohlc.columns,
-                "rows": ohlc.rows,
-            }
-            for ohlc in response.successful
-        ]
-
-        failed_data = [
-            {
-                "type": error.error_type,
-                "category": _categorize_error(error.error_type),
-                "message": error.error_message,
-                "hint": _generate_hint(error.error_type),
-                "recoverable": _is_recoverable(error.error_type),
-                "suggested_tools": _suggest_tools(error.error_type),
-                # Preserve top-level fields for backward compatibility
-                "pair": error.pair,
-                "interval": error.interval,
-                "period": error.period,
-                "timestamp": error.timestamp,
-                "context": {
-                    "pair": error.pair,
-                    "interval": error.interval,
-                    "period": error.period,
-                    "timestamp": error.timestamp,
-                }
-            }
-            for error in response.failed
-        ]
-
-        result = {
-            "success": True,
-            "summary": response.summary,
-            "successful": successful_data,
-            "failed": failed_data,
-            "statistics": {
-                "total_requested": response.total_requested,
-                "total_succeeded": response.total_succeeded,
-                "total_failed": response.total_failed,
-            }
-        }
-        return _normalize_datetime(result)
-    except Exception as e:
-        error_type = "UnexpectedError"
-        result = {
-            "success": False,
-            "error": {
-                "type": error_type,
-                "category": _categorize_error(error_type),
-                "message": str(e),
-                "hint": _generate_hint(error_type),
-                "recoverable": _is_recoverable(error_type),
-                "suggested_tools": _suggest_tools(error_type),
-                "context": {}
-            }
-        }
-        return _normalize_datetime(result)
-
-
 def _fetch_ohlc_with_interval_validation(
     pair: str,
     interval: str,
@@ -364,8 +156,11 @@ def _fetch_ohlc_with_interval_validation(
         Dictionary containing OHLC data or error information
     """
     try:
+        # Normalize interval to lowercase for consistent validation and usage
+        normalized_interval = interval.lower()
+        
         # Validate interval is appropriate for this tool
-        if interval.lower() not in valid_intervals:
+        if normalized_interval not in valid_intervals:
             error_type = "ValidationError"
             valid_intervals_str = ", ".join(sorted(valid_intervals))
 
@@ -386,10 +181,6 @@ def _fetch_ohlc_with_interval_validation(
                     "hint": f"Use one of: {valid_intervals_str}. {suggestion}",
                     "recoverable": True,
                     "suggested_tools": ["list_timeframes", other_tool_name],
-                    # Preserve top-level fields for backward compatibility
-                    "pair": pair,
-                    "interval": interval,
-                    "period": period,
                     "context": {
                         "attempted_interval": interval,
                         "valid_intervals": list(valid_intervals),
@@ -400,7 +191,7 @@ def _fetch_ohlc_with_interval_validation(
             return _normalize_datetime(result)
 
         # Fetch data using common code path
-        request = OHLCRequest(pair=pair, interval=interval, period=period)
+        request = OHLCRequest(pair=pair, interval=normalized_interval, period=period)
         response = fetch_batch_ohlc_sync([request], exclude_weekends=exclude_weekends)
 
         if response.total_succeeded > 0:
@@ -430,10 +221,6 @@ def _fetch_ohlc_with_interval_validation(
                     "hint": _generate_hint(error_type),
                     "recoverable": _is_recoverable(error_type),
                     "suggested_tools": _suggest_tools(error_type),
-                    # Preserve top-level fields for backward compatibility
-                    "pair": error.pair,
-                    "interval": error.interval,
-                    "period": error.period,
                     "context": {
                         "pair": error.pair,
                         "interval": error.interval,
@@ -453,10 +240,6 @@ def _fetch_ohlc_with_interval_validation(
                 "hint": _generate_hint(error_type),
                 "recoverable": _is_recoverable(error_type),
                 "suggested_tools": _suggest_tools(error_type),
-                # Preserve top-level fields for backward compatibility
-                "pair": pair,
-                "interval": interval,
-                "period": period,
                 "context": {
                     "pair": pair,
                     "interval": interval,
@@ -465,6 +248,11 @@ def _fetch_ohlc_with_interval_validation(
             }
         }
         return _normalize_datetime(result)
+
+
+# =============================================================================
+# Primary Tools (MCP 2025 Compliant)
+# =============================================================================
 
 
 def get_intraday_ohlc(
@@ -525,9 +313,124 @@ def get_daily_ohlc(
     )
 
 
-def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
+def get_ohlc_batch(
+    requests: List[Dict[str, str]],
+    exclude_weekends: bool = True
+) -> Dict[str, Any]:
     """
-    List all available currency pairs.
+    Fetch OHLC data for multiple currency pairs and timeframes in parallel.
+
+    Args:
+        requests: List of request dictionaries, each containing:
+            - pair: Currency pair code
+            - interval: Timeframe
+            - period: Time period
+        exclude_weekends: Filter out weekend data (default: True)
+
+    Returns:
+        Dictionary containing batch results with successful and failed requests
+
+    Example:
+        requests = [
+            {"pair": "USDJPY", "interval": "1d", "period": "30d"},
+            {"pair": "EURUSD", "interval": "1h", "period": "5d"},
+        ]
+    """
+    try:
+        # Validate batch size to prevent excessive API requests
+        if len(requests) > MAX_BATCH_SIZE:
+            error_type = "BatchSizeExceeded"
+            result = {
+                "success": False,
+                "error": {
+                    "type": error_type,
+                    "category": _categorize_error(error_type),
+                    "message": f"Batch size ({len(requests)}) exceeds maximum allowed ({MAX_BATCH_SIZE})",
+                    "hint": _generate_hint(error_type),
+                    "recoverable": _is_recoverable(error_type),
+                    "suggested_tools": _suggest_tools(error_type),
+                    "context": {
+                        "max_batch_size": MAX_BATCH_SIZE,
+                        "requested_size": len(requests),
+                    }
+                }
+            }
+            return _normalize_datetime(result)
+
+        ohlc_requests = [
+            OHLCRequest(
+                pair=req["pair"],
+                interval=req.get("interval", "1d"),
+                period=req.get("period", "30d")
+            )
+            for req in requests
+        ]
+
+        response = fetch_batch_ohlc_sync(ohlc_requests, exclude_weekends=exclude_weekends)
+
+        successful_data = [
+            {
+                "pair": ohlc.pair,
+                "interval": ohlc.interval,
+                "period": ohlc.period,
+                "data_count": ohlc.data_count,
+                "timestamp_jst": ohlc.timestamp_jst,
+                "columns": ohlc.columns,
+                "rows": ohlc.rows,
+            }
+            for ohlc in response.successful
+        ]
+
+        failed_data = [
+            {
+                "type": error.error_type,
+                "category": _categorize_error(error.error_type),
+                "message": error.error_message,
+                "hint": _generate_hint(error.error_type),
+                "recoverable": _is_recoverable(error.error_type),
+                "suggested_tools": _suggest_tools(error.error_type),
+                "context": {
+                    "pair": error.pair,
+                    "interval": error.interval,
+                    "period": error.period,
+                    "timestamp": error.timestamp,
+                }
+            }
+            for error in response.failed
+        ]
+
+        result = {
+            "success": True,
+            "summary": response.summary,
+            "successful": successful_data,
+            "failed": failed_data,
+            "statistics": {
+                "total_requested": response.total_requested,
+                "total_succeeded": response.total_succeeded,
+                "total_failed": response.total_failed,
+            }
+        }
+        return _normalize_datetime(result)
+    except Exception as e:
+        error_type = "UnexpectedError"
+        result = {
+            "success": False,
+            "error": {
+                "type": error_type,
+                "category": _categorize_error(error_type),
+                "message": str(e),
+                "hint": _generate_hint(error_type),
+                "recoverable": _is_recoverable(error_type),
+                "suggested_tools": _suggest_tools(error_type),
+                "context": {}
+            }
+        }
+        return _normalize_datetime(result)
+
+
+def list_pairs(preset_only: bool = False) -> Dict[str, Any]:
+    """
+    List all available currency pairs that can be fetched.
 
     Args:
         preset_only: If True, return only preset pairs (default: False)
@@ -564,9 +467,9 @@ def list_available_pairs_tool(preset_only: bool = False) -> Dict[str, Any]:
         return _normalize_datetime(result)
 
 
-def list_available_timeframes_tool(preset_only: bool = False) -> Dict[str, Any]:
+def list_timeframes(preset_only: bool = False) -> Dict[str, Any]:
     """
-    List all available timeframes.
+    List all available timeframes/intervals for data fetching.
 
     Args:
         preset_only: If True, return only preset timeframes (default: False)
@@ -603,37 +506,6 @@ def list_available_timeframes_tool(preset_only: bool = False) -> Dict[str, Any]:
         return _normalize_datetime(result)
 
 
-# New simplified tool names (aliases for better UX)
-def get_ohlc_batch(
-    requests: List[Dict[str, str]],
-    exclude_weekends: bool = True
-) -> Dict[str, Any]:
-    """
-    Alias for fetch_ohlc_batch_tool with a simpler name.
-
-    Fetch OHLC data for multiple currency pairs and timeframes in parallel.
-    """
-    return fetch_ohlc_batch_tool(requests, exclude_weekends)
-
-
-def list_pairs(preset_only: bool = False) -> Dict[str, Any]:
-    """
-    Alias for list_available_pairs_tool with a simpler name.
-
-    List all available currency pairs that can be fetched.
-    """
-    return list_available_pairs_tool(preset_only)
-
-
-def list_timeframes(preset_only: bool = False) -> Dict[str, Any]:
-    """
-    Alias for list_available_timeframes_tool with a simpler name.
-
-    List all available timeframes/intervals for data fetching.
-    """
-    return list_available_timeframes_tool(preset_only)
-
-
 def ping() -> Dict[str, Any]:
     """
     Health check endpoint to verify server connectivity and capabilities.
@@ -649,7 +521,7 @@ def ping() -> Dict[str, Any]:
         try:
             server_version = version("fx-kline")
         except PackageNotFoundError:
-            server_version = "0.1.0"
+            server_version = "1.0.0"
 
         # Get current timestamp
         current_time = datetime.now(timezone.utc)
@@ -680,7 +552,6 @@ def ping() -> Dict[str, Any]:
                 "data_fetching": ["get_intraday_ohlc", "get_daily_ohlc", "get_ohlc_batch"],
                 "metadata": ["list_pairs", "list_timeframes"],
                 "health": ["ping"],
-                "deprecated": ["fetch_ohlc", "fetch_ohlc_batch", "list_available_pairs", "list_available_timeframes"]
             }
         }
         return _normalize_datetime(result)
